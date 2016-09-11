@@ -1,0 +1,14 @@
+#archive-control-edit-page #titlediv {
+	margin-bottom:30px;
+}
+#archive-control-before, #archive-control-after {
+	margin-bottom:30px;
+}
+#archive-control-edit-page #poststuff #postbox-container-2 h2 {
+	padding-left:0px;
+	padding-right:0px;
+}
+#archive-control-edit-page p.submit, #archive-control-options p.submit {
+	margin:0px;
+	padding:0px;
+}
