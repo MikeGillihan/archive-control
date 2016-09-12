@@ -12,3 +12,15 @@
 	margin:0px;
 	padding:0px;
 }
+#archive-control-options .form-table th, #archive-control-options .form-table td {
+	padding-top:10px;
+	padding-bottom:10px;
+}
+#archive-control-options select {
+	width:30%;
+}
+.archive-control-info {
+	color:#999;
+	font-style: italic;
+	padding-top:3px;
+}
