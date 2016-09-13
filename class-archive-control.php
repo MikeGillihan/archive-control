@@ -435,7 +435,7 @@ class Archive_Control {
 													<select class="archive-control-pagination" name="archive_control_options[<?php echo $post_type->name; ?>][pagination]">
 														<option value="default"<?php if ($archive_control_options[$post_type->name]['pagination'] == null) { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
 														<option value="none"<?php if ($archive_control_options[$post_type->name]['pagination'] == 'none') { echo "selected='selected'"; } ?>><?php _e('No Pagination'); ?></option>
-														<option value="custom"<?php if ($archive_control_options[$post_type->name]['pagination'] == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Number'); ?></option>
+														<option value="custom"<?php if ($archive_control_options[$post_type->name]['pagination'] == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Posts Per Page'); ?></option>
 													</select>
 													<input class="archive-control-posts-per-page" type="text" name="archive_control_options[<?php echo $post_type->name; ?>][posts_per_page]" value="<?php echo $archive_control_options[$post_type->name]['posts_per_page']; ?>" placeholder="<?php _e('Posts per page'); ?>"<?php if ($archive_control_options[$post_type->name]['pagination'] !== 'custom') { echo " style='display:none;'"; } ?>/>
 												</td>
