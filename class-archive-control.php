@@ -305,20 +305,25 @@ class Archive_Control {
 									</p>
 									<ul>
 										<li>
-											<a href="https://wordpress.org/plugins/custom-post-type-ui/">Custom Post Type UI</a>
+											<a href="https://wordpress.org/plugins/custom-post-type-ui/" target="_blank">Custom Post Type UI</a>
 										</li>
 										<li>
-											<a href="https://wordpress.org/plugins/advanced-custom-fields/">Advanced Custom Fields</a>
+											<a href="https://wordpress.org/plugins/advanced-custom-fields/" target="_blank">Advanced Custom Fields</a>
 										</li>
 										<li>
-											<a href="https://wordpress.org/plugins/wp-pagenavi/">WP-PageNavi</a>
+											<a href="https://wordpress.org/plugins/wp-pagenavi/" target="_blank">WP-PageNavi</a>
 										</li>
 										<li>
-											<a href="https://wordpress.org/plugins/intuitive-custom-post-order/">Intuitive Custom Post Type Order</a>
+											<a href="https://wordpress.org/plugins/intuitive-custom-post-order/" target="_blank">Intuitive Custom Post Type Order</a>
 										</li>
 									</ul>
 								</div>
 							</div><!-- #other-plugins -->
+							<div id="bugs-features" class="postbox">
+								<div class="inside">
+									<p>Found a bug or have a feature request? Let us know on the <a href="https://wordpress.org/plugins/archive-control/">WordPress plugin directory</a>, or send a pull request with <a href="https://github.com/TheJester12/archive-control" target="_blank">GitHub</a>.</p>
+								</div>
+							</div><!-- #bugs-features -->
 							<div id="buy-coffee" class="postbox">
 								<div class="inside">
 									<p><?php _e('Find yourself using this plugin often? Fuel it\'s future development with a nice cup of hot joe!', 'archive-control'); ?></p>

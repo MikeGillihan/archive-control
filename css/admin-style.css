@@ -16,6 +16,9 @@
 	padding-top:10px;
 	padding-bottom:10px;
 }
+#archive-control-options .postbox .hndle {
+	cursor:default;
+}
 #archive-control-options select {
 	width:30%;
 }
