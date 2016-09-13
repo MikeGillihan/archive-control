@@ -8,13 +8,13 @@
  * @package   Archive_Control
  * @author    Jesse Sutherland
  * @license   GPL-2.0+
- * @link      http://familywp.com
+ * @link      http://switchthemes.com
  * @copyright 2016 Jesse Sutherland
  *
  * @wordpress-plugin
  * Plugin Name: Archive Control
- * Plugin URI:  http://switchthemes.com/
- * Description: A required plugin for the WP Family Blog Theme. Adds Family Profiles and Post Icons.
+ * Plugin URI:  http://switchthemes.com/archive-control/
+ * Description: Customize custom post type archive titles, order, pagination, and add editable textareas above and below archive pages.
  * Version:     1.0.0
  * Author:      Jesse Sutherland
  * Author URI:  http://jessesutherland.com

@@ -115,4 +115,9 @@
         }
     });
 
+    $("#buy-coffee-button").click( function() {
+        $("#paypal-form").submit();
+        e.preventDefault();
+    });
+
 }(jQuery));
