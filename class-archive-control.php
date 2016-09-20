@@ -126,6 +126,7 @@ class Archive_Control {
 
 		load_textdomain( $domain, WP_LANG_DIR . '/' . $domain . '/' . $domain . '-' . $locale . '.mo' );
 		load_plugin_textdomain( $domain, FALSE, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
+
 	}
 
 
@@ -150,7 +151,7 @@ class Archive_Control {
 
 	public function archive_control_action_link( $links ) {
 		$mylinks = array(
-			'<a href="' . admin_url( 'options-general.php?page=archive-control.php' ) . '">Settings</a>',
+			'<a href="' . admin_url( 'options-general.php?page=archive-control.php' ) . '">' . __('Settings', 'archive-control') . '</a>',
 		);
 		return array_merge( $links, $mylinks );
 	}
@@ -237,7 +238,7 @@ class Archive_Control {
 								<div id="titlediv">
 									<div id="titlewrap">
 										<label class="screen-reader-text" id="title-prompt-text" for="title"><?php _e('Enter archive title here', 'archive-control'); ?></label>
-										<input type="text" name="archive_control_<?php echo $current_post_type; ?>_title" size="30" value="<?php echo $archive_control_cpt_title; ?>" id="title" spellcheck="true" autocomplete="off">
+										<input type="text" name="archive_control_<?php echo esc_attr($current_post_type); ?>_title" size="30" value="<?php echo esc_attr($archive_control_cpt_title); ?>" id="title" spellcheck="true" autocomplete="off">
 									</div>
 								</div>
 							<?php endif; ?>
@@ -350,7 +351,7 @@ class Archive_Control {
 											<tr valign="top">
 									        	<th scope="row"><label><?php _e('Archive Title', 'archive-control'); ?></label></th>
 										        <td>
-													<select class="archive-control-title" name="archive_control_options[<?php echo $post_type->name; ?>][title]">
+													<select class="archive-control-title" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][title]">
 														<option value="default"<?php if ($archive_control_options[$post_type->name]['title'] == null || $archive_control_options[$post_type->name]['title'] == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
 														<option value="no-labels"<?php if ($archive_control_options[$post_type->name]['title'] == 'no-labels') { echo "selected='selected'"; } ?>><?php _e('Remove Labels (Archive, Category, Tag, etc.)', 'archive-control'); ?></option>
 														<option value="custom"<?php if ($archive_control_options[$post_type->name]['title'] == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Override', 'archive-control'); ?></option>
@@ -361,15 +362,15 @@ class Archive_Control {
 											<tr valign="top">
 												<th scope="row"><label><?php _e('Content Before List'); ?></label></th>
 										        <td>
-													<select class="archive-control-before" name="archive_control_options[<?php echo $post_type->name; ?>][before]">
+													<select class="archive-control-before" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][before]">
 														<option value="default"<?php if ($archive_control_options[$post_type->name]['before'] == null || $archive_control_options[$post_type->name]['before'] == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
 														<option value="textarea"<?php if ($archive_control_options[$post_type->name]['before'] == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enable Textarea'); ?></option>
 													</select>
-													<select class="archive-control-before-pages" name="archive_control_options[<?php echo $post_type->name; ?>][before-pages]"<?php if ($archive_control_options[$post_type->name]['before'] !== 'textarea') { echo " style='display:none;'"; } ?>>
+													<select class="archive-control-before-pages" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][before-pages]"<?php if ($archive_control_options[$post_type->name]['before'] !== 'textarea') { echo " style='display:none;'"; } ?>>
 														<option value="all-pages"<?php if ($archive_control_options[$post_type->name]['before-pages'] == null || $archive_control_options[$post_type->name]['before-pages'] == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
 														<option value="first"<?php if ($archive_control_options[$post_type->name]['before-pages'] == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
 													</select>
-													<select class="archive-control-before-placement" name="archive_control_options[<?php echo $post_type->name; ?>][before-placement]"<?php if ($archive_control_options[$post_type->name]['before'] !== 'textarea') { echo " style='display:none;'"; } ?>>
+													<select class="archive-control-before-placement" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][before-placement]"<?php if ($archive_control_options[$post_type->name]['before'] !== 'textarea') { echo " style='display:none;'"; } ?>>
 														<option value="automatic"<?php if ($archive_control_options[$post_type->name]['before-placement'] == null || $archive_control_options[$post_type->name]['before-placement'] == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
 														<option value="function"<?php if ($archive_control_options[$post_type->name]['before-placement'] == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
 													</select>
@@ -380,15 +381,15 @@ class Archive_Control {
 											<tr valign="top">
 												<th scope="row"><label><?php _e('Content After List'); ?></label></th>
 										        <td>
-													<select class="archive-control-after" name="archive_control_options[<?php echo $post_type->name; ?>][after]">
+													<select class="archive-control-after" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][after]">
 														<option value="default"<?php if ($archive_control_options[$post_type->name]['after'] == null || $archive_control_options[$post_type->name]['after'] == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
 														<option value="textarea"<?php if ($archive_control_options[$post_type->name]['after'] == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enable Textarea'); ?></option>
 													</select>
-													<select class="archive-control-after-pages" name="archive_control_options[<?php echo $post_type->name; ?>][after-pages]"<?php if ($archive_control_options[$post_type->name]['after'] !== 'textarea') { echo " style='display:none;'"; } ?>>
+													<select class="archive-control-after-pages" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][after-pages]"<?php if ($archive_control_options[$post_type->name]['after'] !== 'textarea') { echo " style='display:none;'"; } ?>>
 														<option value="all-pages"<?php if ($archive_control_options[$post_type->name]['after-pages'] == null || $archive_control_options[$post_type->name]['after-pages'] == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
 														<option value="first"<?php if ($archive_control_options[$post_type->name]['after-pages'] == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
 													</select>
-													<select class="archive-control-after-placement" name="archive_control_options[<?php echo $post_type->name; ?>][after-placement]"<?php if ($archive_control_options[$post_type->name]['after'] !== 'textarea') { echo " style='display:none;'"; } ?>>
+													<select class="archive-control-after-placement" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][after-placement]"<?php if ($archive_control_options[$post_type->name]['after'] !== 'textarea') { echo " style='display:none;'"; } ?>>
 														<option value="automatic"<?php if ($archive_control_options[$post_type->name]['after-placement'] == null || $archive_control_options[$post_type->name]['after-placement'] == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
 														<option value="function"<?php if ($archive_control_options[$post_type->name]['after-placement'] == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
 													</select>
@@ -399,7 +400,7 @@ class Archive_Control {
 											<tr valign="top">
 												<th scope="row"><?php _e('Order By'); ?></th>
 										        <td>
-													<select class="archive-control-order-by" name="archive_control_options[<?php echo $post_type->name; ?>][orderby]">
+													<select class="archive-control-order-by" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][orderby]">
 														<option value="default"<?php if ($archive_control_options[$post_type->name]['orderby'] == null) { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
 														<option value="date"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'date') { echo "selected='selected'"; } ?>><?php _e('Date Published'); ?></option>
 														<option value="title"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'title') { echo "selected='selected'"; } ?>><?php _e('Title'); ?></option>
@@ -416,13 +417,13 @@ class Archive_Control {
 														<option value="meta_value_num"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'meta_value_num') { echo "selected='selected'"; } ?>><?php _e('Meta Value (Numeric)'); ?></option>
 														<option value="none"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'none') { echo "selected='selected'"; } ?>><?php _e('No Order'); ?></option>
 													</select>
-													<input class="archive-control-meta-key" type="text" name="archive_control_options[<?php echo $post_type->name; ?>][meta_key]" value="<?php echo $archive_control_options[$post_type->name]['meta_key']; ?>" placeholder="<?php _e('Meta Key'); ?>"<?php if ($archive_control_options[$post_type->name]['orderby'] !== 'meta_value' || $archive_control_options[$post_type->name]['orderby'] !== 'meta_value_num') { echo " style='display:none;'"; } ?>/>
+													<input class="archive-control-meta-key" type="text" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][meta_key]" value="<?php echo esc_attr($archive_control_options[$post_type->name]['meta_key']); ?>" placeholder="<?php _e('Meta Key'); ?>"<?php if ($archive_control_options[$post_type->name]['orderby'] !== 'meta_value' || $archive_control_options[$post_type->name]['orderby'] !== 'meta_value_num') { echo " style='display:none;'"; } ?>/>
 												</td>
 											</tr>
 											<tr valign="top">
 												<th scope="row"><label><?php _e('Order'); ?></label></th>
 										        <td>
-													<select name="archive_control_options[<?php echo $post_type->name; ?>][order]">
+													<select name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][order]">
 														<option value="default"<?php if ($archive_control_options[$post_type->name]['orderby'] == null) { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
 														<option value="asc"<?php if ($archive_control_options[$post_type->name]['order'] == 'asc') { echo "selected='selected'"; } ?>><?php _e('Ascending'); ?></option>
 														<option value="desc"<?php if ($archive_control_options[$post_type->name]['order'] == 'desc') { echo "selected='selected'"; } ?>><?php _e('Descending'); ?></option>
@@ -432,12 +433,12 @@ class Archive_Control {
 											<tr valign="top">
 												<th scope="row"><label><?php _e('Pagination'); ?></label></th>
 										        <td>
-													<select class="archive-control-pagination" name="archive_control_options[<?php echo $post_type->name; ?>][pagination]">
+													<select class="archive-control-pagination" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][pagination]">
 														<option value="default"<?php if ($archive_control_options[$post_type->name]['pagination'] == null) { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
 														<option value="none"<?php if ($archive_control_options[$post_type->name]['pagination'] == 'none') { echo "selected='selected'"; } ?>><?php _e('No Pagination'); ?></option>
 														<option value="custom"<?php if ($archive_control_options[$post_type->name]['pagination'] == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Posts Per Page'); ?></option>
 													</select>
-													<input class="archive-control-posts-per-page" type="text" name="archive_control_options[<?php echo $post_type->name; ?>][posts_per_page]" value="<?php echo $archive_control_options[$post_type->name]['posts_per_page']; ?>" placeholder="<?php _e('Posts per page'); ?>"<?php if ($archive_control_options[$post_type->name]['pagination'] !== 'custom') { echo " style='display:none;'"; } ?>/>
+													<input class="archive-control-posts-per-page" type="text" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][posts_per_page]" value="<?php echo esc_attr($archive_control_options[$post_type->name]['posts_per_page']); ?>" placeholder="<?php _e('Posts per page'); ?>"<?php if ($archive_control_options[$post_type->name]['pagination'] !== 'custom') { echo " style='display:none;'"; } ?>/>
 												</td>
 									        </tr>
 										</table>
