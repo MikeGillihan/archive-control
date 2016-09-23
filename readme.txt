@@ -47,8 +47,9 @@ The "Automatic" setting uses the "loop_start" and "loop_end" WordPress hooks to 
 
 == Screenshots ==
 
-1. Settings for each custom post type that has an archive.
-2. Give your client the ability to edit archive headlines and content before and after the loop.
+1. An example of a custom post type archive page.
+2. Settings for each custom post type that has an archive.
+3. Give your client the ability to edit archive headlines and content before and after the loop.
 
 == Changelog ==
 
