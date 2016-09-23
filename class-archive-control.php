@@ -247,8 +247,8 @@ class Archive_Control {
 									<h2><span><?php _e('Before Archive Loop', 'archive-control'); ?></span></h2>
 									<div class="inside">
 										<?php $settings = array(
-											textarea_name => 'archive_control_' . $current_post_type . '_before',
-											textarea_rows => 10
+											'textarea_name' => 'archive_control_' . $current_post_type . '_before',
+											'textarea_rows' => 10
 										);?>
 										<?php wp_editor( $archive_control_cpt_before, 'before-archive', $settings ); ?>
 									</div><!-- .inside -->
@@ -259,8 +259,8 @@ class Archive_Control {
 									<h2><span><?php _e('After Archive Loop', 'archive-control'); ?></span></h2>
 									<div class="inside">
 										<?php $settings = array(
-											textarea_name => 'archive_control_' . $current_post_type . '_after',
-											textarea_rows => 10
+											'textarea_name' => 'archive_control_' . $current_post_type . '_after',
+											'textarea_rows' => 10
 										);?>
 										<?php wp_editor( $archive_control_cpt_after, 'after-archive', $settings ); ?>
 									</div><!-- .inside -->
