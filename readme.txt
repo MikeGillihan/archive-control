@@ -4,7 +4,7 @@ Donate link: http://switchthemes.com/archive-control/
 Tags: custom post type, post type, post types, archive, title, order, pagination
 Requires at least: 4.1
 Tested up to: 4.6.1
-Stable tag: 1.0
+Stable tag: 1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,7 +19,8 @@ We have carefully separated the settings for the post types, which only administ
 * **Archive Titles:** If your theme is using the_archive_title() function, then you can control the titles of your archives and either set them to remove "Archives: " from the headline, or override it entirely with something custom.
 * **Archive Order:** Instead of messing with code to change the order of a custom post type archive to Title, or a Meta Value, you can customize it easily in this plugin.
 * **Pagination:** You may find that your default settings for blog pagination don't apply with your custom post type, maybe you need to show all posts, or maybe you need to show just 2 at a time. The control is yours.
-* **Editable Textareas Before/After:** Give your client ability to edit content directly before or after the archive list. You can have it automatically added, or use a theme function to give you more control over their placement.
+* **Editable Textareas Before/After:** Give your site editors the ability to edit content directly before or after the archive list. You can have it automatically added, or use a theme function to give you more control over their placement.
+* **Archive Featured Image:** Your site editors can also add and edit a Featured Image for the Archive page if desired.
 
 
 == Installation ==

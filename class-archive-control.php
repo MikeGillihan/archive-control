@@ -144,6 +144,11 @@ class Archive_Control {
 		wp_register_style( 'archive_control_admin_css', plugin_dir_url( __FILE__ ) . '/css/admin-style.css', false, '1.0' );
 		wp_enqueue_style( 'archive_control_admin_css' );
 		wp_register_script( 'archive_control_admin_js', plugin_dir_url( __FILE__ ) . '/js/admin-scripts.js', 'jquery', '1.0', true );
+		$translation_array = array(
+			'media_upload_title_text' => __( 'Archive Featured Image', 'archive-control' ),
+			'media_upload_button_text' => __( 'Set featured image', 'archive-control' )
+		);
+		wp_localize_script( 'archive_control_admin_js', 'archive_control', $translation_array );
 		wp_enqueue_script( 'archive_control_admin_js' );
 	}
 
@@ -167,7 +172,7 @@ class Archive_Control {
 		$archive_control_options = get_option('archive_control_options');
 		if ($archive_control_options) {
 			foreach($archive_control_options as $post_type => $options) {
-				if ($options['title'] == 'custom' || $options['before'] == 'textarea' || $options['after'] == 'textarea') {
+				if ($options['title'] == 'custom' || $options['image'] == 'enabled' || $options['before'] == 'textarea' || $options['after'] == 'textarea') {
 					if ($post_type == 'post') {
 						$parent_slug = 'edit.php';
 					} else {
@@ -192,6 +197,7 @@ class Archive_Control {
 		if ($archive_control_options) {
 			foreach($archive_control_options as $post_type => $options) {
 				register_setting( 'archive-control-' . $post_type . '-group', 'archive_control_' . $post_type . '_title' );
+				register_setting( 'archive-control-' . $post_type . '-group', 'archive_control_' . $post_type . '_image' );
 				register_setting( 'archive-control-' . $post_type . '-group', 'archive_control_' . $post_type . '_before' );
 				register_setting( 'archive-control-' . $post_type . '-group', 'archive_control_' . $post_type . '_after' );
 			}
@@ -203,13 +209,14 @@ class Archive_Control {
 		$current_post_type = $screen->post_type;
 		$archive_control_options = get_option('archive_control_options');
 		$archive_control_cpt_title = get_option('archive_control_' . $current_post_type . '_title');
+		$archive_control_cpt_image = get_option('archive_control_' . $current_post_type . '_image');
 		$archive_control_cpt_before = get_option('archive_control_' . $current_post_type . '_before');
 		$archive_control_cpt_after = get_option('archive_control_' . $current_post_type . '_after');
 		if ($screen->post_type == '' && $screen->parent_file == 'edit.php') {
 			$current_post_type = 'post';
 		}
 		$current_post_type_object = get_post_type_object($current_post_type);
-		$current_post_type_options = $archive_control_options[$current_post_type];
+		$current_post_type_options = isset($archive_control_options[$current_post_type]) ? $archive_control_options[$current_post_type] : null;
 		?>
 		<div id="archive-control-edit-page" class="wrap">
 			<h1><?php printf(esc_html__( 'Edit %1$s Archive Page', 'archive-control' ),$current_post_type_object->label); ?></h1>
@@ -232,6 +239,34 @@ class Archive_Control {
 									</div><!-- #major-publishing-actions -->
 								</div><!-- .inside -->
 							</div><!-- #submitdiv -->
+							<?php if ($current_post_type_options['image'] == 'enabled') : ?>
+								<div id="featured-image-archive" class="postbox ">
+									<h2 class="hndle"><span><?php _e('Archive Featured Image', 'archive-control'); ?></span></h2>
+									<div class="inside">
+										<?php
+										$upload_link = esc_url( get_upload_iframe_src( 'image' ) );
+										$featured_img_src = wp_get_attachment_image_src( $archive_control_cpt_image, 'full' );
+										$featured_img = is_array( $featured_img_src );
+										?>
+										<div class="featured-image-archive-container">
+										    <?php if ( $featured_img ) : ?>
+										        <img src="<?php echo $featured_img_src[0] ?>" alt="" style="max-width:100%;" />
+										    <?php endif; ?>
+										</div>
+										<p class="hide-if-no-js">
+										    <a class="upload-featured-image-archive-img <?php if ( $featured_img  ) { echo 'hidden'; } ?>"
+										       href="<?php echo $upload_link ?>">
+										        <?php _e('Set featured image', 'archive-control') ?>
+										    </a>
+										    <a class="delete-featured-image-archive-img <?php if ( ! $featured_img  ) { echo 'hidden'; } ?>"
+										      href="#">
+										        <?php _e('Remove featured image', 'archive-control') ?>
+										    </a>
+										</p>
+										<input class="featured-image-id" name="archive_control_<?php echo esc_attr($current_post_type); ?>_image" type="hidden" value="<?php echo esc_attr( $archive_control_cpt_image ); ?>" />
+									</div><!-- .inside -->
+								</div><!-- #featured-image-archive -->
+							<?php endif; ?>
 						</div><!-- .postbox-container -->
 						<div id="postbox-container-2" class="postbox-container">
 							<?php if ($current_post_type_options['title'] == 'custom') : ?>
@@ -351,94 +386,160 @@ class Archive_Control {
 											<tr valign="top">
 									        	<th scope="row"><label><?php _e('Archive Title', 'archive-control'); ?></label></th>
 										        <td>
+													<?php
+														$title_val = isset($archive_control_options[$post_type->name]['title']) ? $archive_control_options[$post_type->name]['title'] : null;
+													?>
 													<select class="archive-control-title" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][title]">
-														<option value="default"<?php if ($archive_control_options[$post_type->name]['title'] == null || $archive_control_options[$post_type->name]['title'] == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-														<option value="no-labels"<?php if ($archive_control_options[$post_type->name]['title'] == 'no-labels') { echo "selected='selected'"; } ?>><?php _e('Remove Labels (Archive, Category, Tag, etc.)', 'archive-control'); ?></option>
-														<option value="custom"<?php if ($archive_control_options[$post_type->name]['title'] == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Override', 'archive-control'); ?></option>
+														<option value="default"<?php if ($title_val == null || $title_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+														<option value="no-labels"<?php if ($title_val == 'no-labels') { echo "selected='selected'"; } ?>><?php _e('Remove Labels (Archive, Category, Tag, etc.)', 'archive-control'); ?></option>
+														<option value="custom"<?php if ($title_val == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Override', 'archive-control'); ?></option>
 													</select>
-													<div class="archive-control-info archive-control-title-message"<?php if ($archive_control_options[$post_type->name]['title'] == 'default' || $archive_control_options[$post_type->name]['title'] == null) { echo " style='display:none;'"; } ?>><?php _e('This requires that your theme use the_archive_title() function.', 'archive-control'); ?><?php if ($archive_control_options[$post_type->name]['title'] == 'custom') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
+
+													<div class="archive-control-info archive-control-title-message"<?php if ($title_val == 'default' || $title_val == null) { echo " style='display:none;'"; } ?>><?php _e('This requires that your theme use the_archive_title() function.', 'archive-control'); ?><?php if ($title_val == 'custom') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
+												</td>
+											</tr>
+											<tr valign="top">
+									        	<th scope="row"><label><?php _e('Archive Featured Image', 'archive-control'); ?></label></th>
+										        <td>
+													<?php
+														$image_val = isset($archive_control_options[$post_type->name]['image']) ? $archive_control_options[$post_type->name]['image'] : null;
+
+														$image_placement_val = isset($archive_control_options[$post_type->name]['image-placement']) ? $archive_control_options[$post_type->name]['image-placement'] : null;
+
+														$image_pages_val = isset($archive_control_options[$post_type->name]['image-pages']) ? $archive_control_options[$post_type->name]['image-pages'] : null;
+													?>
+
+													<select class="archive-control-image" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][image]">
+														<option value="disabled"<?php if ($image_val == null || $image_val == 'disabled') { echo "selected='selected'"; } ?>><?php _e('Disabled', 'archive-control'); ?></option>
+														<option value="enabled"<?php if ($image_val == 'enabled') { echo "selected='selected'"; } ?>><?php _e('Enabled', 'archive-control'); ?></option>
+													</select>
+
+													<select class="archive-control-image-placement" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][image-placement]"<?php if ($image_val !== 'enabled') { echo " style='display:none;'"; } ?>>
+														<option value="automatic"<?php if ($image_placement_val == null || $image_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
+														<option value="function"<?php if ($image_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
+													</select>
+
+													<select class="archive-control-image-pages" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][image-pages]"<?php if ($image_val !== 'enabled') { echo " style='display:none;'"; } ?>>
+														<option value="all-pages"<?php if ($image_pages_val == null || $image_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
+														<option value="first"<?php if ($image_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
+													</select>
+
+													<div class="archive-control-info archive-control-image-automatic-message" <?php if ($image_val !== 'enabled' || $image_placement_val !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The image will be automatically added to the archive page before the posts loop.'); ?><?php if ($image_val == 'enabled') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
+
+													<div class="archive-control-info archive-control-image-manual-message"<?php if ($image_val !== 'enabled' || $image_placement_val !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The image will be added if you place the_archive_thumbnail("large") within your theme files.'); ?><?php if ($image_val == 'enabled') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
 												</td>
 											</tr>
 											<tr valign="top">
 												<th scope="row"><label><?php _e('Content Before List'); ?></label></th>
 										        <td>
+													<?php
+														$before_val = isset($archive_control_options[$post_type->name]['before']) ? $archive_control_options[$post_type->name]['before'] : null;
+
+														$before_placement_val = isset($archive_control_options[$post_type->name]['before-placement']) ? $archive_control_options[$post_type->name]['before-placement'] : null;
+
+														$before_pages_val = isset($archive_control_options[$post_type->name]['before-pages']) ? $archive_control_options[$post_type->name]['before-pages'] : null;
+													?>
+
 													<select class="archive-control-before" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][before]">
-														<option value="default"<?php if ($archive_control_options[$post_type->name]['before'] == null || $archive_control_options[$post_type->name]['before'] == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-														<option value="textarea"<?php if ($archive_control_options[$post_type->name]['before'] == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enable Textarea'); ?></option>
+														<option value="default"<?php if ($before_val == null || $before_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+														<option value="textarea"<?php if ($before_val == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enable Textarea'); ?></option>
 													</select>
-													<select class="archive-control-before-pages" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][before-pages]"<?php if ($archive_control_options[$post_type->name]['before'] !== 'textarea') { echo " style='display:none;'"; } ?>>
-														<option value="all-pages"<?php if ($archive_control_options[$post_type->name]['before-pages'] == null || $archive_control_options[$post_type->name]['before-pages'] == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
-														<option value="first"<?php if ($archive_control_options[$post_type->name]['before-pages'] == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
+
+													<select class="archive-control-before-placement" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][before-placement]"<?php if ($before_val !== 'textarea') { echo " style='display:none;'"; } ?>>
+														<option value="automatic"<?php if ($before_placement_val == null || $before_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
+														<option value="function"<?php if ($before_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
 													</select>
-													<select class="archive-control-before-placement" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][before-placement]"<?php if ($archive_control_options[$post_type->name]['before'] !== 'textarea') { echo " style='display:none;'"; } ?>>
-														<option value="automatic"<?php if ($archive_control_options[$post_type->name]['before-placement'] == null || $archive_control_options[$post_type->name]['before-placement'] == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
-														<option value="function"<?php if ($archive_control_options[$post_type->name]['before-placement'] == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
+
+													<select class="archive-control-before-pages" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][before-pages]"<?php if ($before_val !== 'textarea') { echo " style='display:none;'"; } ?>>
+														<option value="all-pages"<?php if ($before_pages_val == null || $before_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
+														<option value="first"<?php if ($before_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
 													</select>
-													<div class="archive-control-info archive-control-before-automatic-message" <?php if ($archive_control_options[$post_type->name]['before'] !== 'textarea' || $archive_control_options[$post_type->name]['before-placement'] !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The content will be automatically added to the archive page before the posts loop.'); ?><?php if ($archive_control_options[$post_type->name]['before'] == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
-													<div class="archive-control-info archive-control-before-manual-message"<?php if ($archive_control_options[$post_type->name]['before'] !== 'textarea' || $archive_control_options[$post_type->name]['before-placement'] !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The content will be added if you place  the_archive_top_content() within your theme files.'); ?><?php if ($archive_control_options[$post_type->name]['before'] == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
+
+													<div class="archive-control-info archive-control-before-automatic-message" <?php if ($before_val !== 'textarea' || $before_placement_val !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The content will be automatically added to the archive page before the posts loop.'); ?><?php if ($before_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
+
+													<div class="archive-control-info archive-control-before-manual-message"<?php if ($before_val !== 'textarea' || $before_placement_val !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The content will be added if you place  the_archive_top_content() within your theme files.'); ?><?php if ($before_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
 												</td>
 											</tr>
 											<tr valign="top">
 												<th scope="row"><label><?php _e('Content After List'); ?></label></th>
 										        <td>
+													<?php
+														$after_val = isset($archive_control_options[$post_type->name]['after']) ? $archive_control_options[$post_type->name]['after'] : null;
+
+														$after_placement_val = isset($archive_control_options[$post_type->name]['after-placement']) ? $archive_control_options[$post_type->name]['after-placement'] : null;
+
+														$after_pages_val = isset($archive_control_options[$post_type->name]['after-pages']) ? $archive_control_options[$post_type->name]['after-pages'] : null;
+													?>
 													<select class="archive-control-after" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][after]">
-														<option value="default"<?php if ($archive_control_options[$post_type->name]['after'] == null || $archive_control_options[$post_type->name]['after'] == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-														<option value="textarea"<?php if ($archive_control_options[$post_type->name]['after'] == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enable Textarea'); ?></option>
+														<option value="default"<?php if ($after_val == null || $after_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+														<option value="textarea"<?php if ($after_val == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enable Textarea'); ?></option>
 													</select>
-													<select class="archive-control-after-pages" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][after-pages]"<?php if ($archive_control_options[$post_type->name]['after'] !== 'textarea') { echo " style='display:none;'"; } ?>>
-														<option value="all-pages"<?php if ($archive_control_options[$post_type->name]['after-pages'] == null || $archive_control_options[$post_type->name]['after-pages'] == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
-														<option value="first"<?php if ($archive_control_options[$post_type->name]['after-pages'] == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
+													<select class="archive-control-after-placement" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][after-placement]"<?php if ($after_val !== 'textarea') { echo " style='display:none;'"; } ?>>
+														<option value="automatic"<?php if ($after_placement_val == null || $after_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
+														<option value="function"<?php if ($after_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
 													</select>
-													<select class="archive-control-after-placement" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][after-placement]"<?php if ($archive_control_options[$post_type->name]['after'] !== 'textarea') { echo " style='display:none;'"; } ?>>
-														<option value="automatic"<?php if ($archive_control_options[$post_type->name]['after-placement'] == null || $archive_control_options[$post_type->name]['after-placement'] == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
-														<option value="function"<?php if ($archive_control_options[$post_type->name]['after-placement'] == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
+													<select class="archive-control-after-pages" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][after-pages]"<?php if ($after_val !== 'textarea') { echo " style='display:none;'"; } ?>>
+														<option value="all-pages"<?php if ($after_pages_val == null || $after_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
+														<option value="first"<?php if ($after_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
 													</select>
-													<div class="archive-control-info archive-control-after-automatic-message" <?php if ($archive_control_options[$post_type->name]['after'] !== 'textarea' || $archive_control_options[$post_type->name]['after-placement'] !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The content will be automatically added to the archive page after the posts loop.'); ?><?php if ($archive_control_options[$post_type->name]['after'] == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
-													<div class="archive-control-info archive-control-after-manual-message"<?php if ($archive_control_options[$post_type->name]['after'] !== 'textarea' || $archive_control_options[$post_type->name]['after-placement'] !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The content will be added if you place  the_archive_bottom_content() within your theme files.'); ?><?php if ($archive_control_options[$post_type->name]['after'] == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
+													<div class="archive-control-info archive-control-after-automatic-message" <?php if ($after_val !== 'textarea' || $after_placement_val !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The content will be automatically added to the archive page after the posts loop.'); ?><?php if ($after_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
+													<div class="archive-control-info archive-control-after-manual-message"<?php if ($after_val !== 'textarea' || $after_placement_val !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The content will be added if you place  the_archive_bottom_content() within your theme files.'); ?><?php if ($after_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
 												</td>
 											</tr>
 											<tr valign="top">
 												<th scope="row"><?php _e('Order By'); ?></th>
 										        <td>
+													<?php
+														$orderby_val = isset($archive_control_options[$post_type->name]['orderby']) ? $archive_control_options[$post_type->name]['orderby'] : null;
+
+														$meta_key_val = isset($archive_control_options[$post_type->name]['meta_key']) ? $archive_control_options[$post_type->name]['meta_key'] : null;
+													?>
 													<select class="archive-control-order-by" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][orderby]">
-														<option value="default"<?php if ($archive_control_options[$post_type->name]['orderby'] == null) { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-														<option value="date"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'date') { echo "selected='selected'"; } ?>><?php _e('Date Published'); ?></option>
-														<option value="title"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'title') { echo "selected='selected'"; } ?>><?php _e('Title'); ?></option>
-														<option value="modified"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'modified') { echo "selected='selected'"; } ?>><?php _e('Date Modified'); ?></option>
-														<option value="menu_order"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'menu_order') { echo "selected='selected'"; } ?>><?php _e('Menu Order'); ?></option>
-														<option value="rand"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'rand') { echo "selected='selected'"; } ?>><?php _e('Random'); ?></option>
-														<option value="ID"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'ID') { echo "selected='selected'"; } ?>><?php _e('ID'); ?></option>
-														<option value="author"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'author') { echo "selected='selected'"; } ?>><?php _e('Author'); ?></option>
-														<option value="name"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'name') { echo "selected='selected'"; } ?>><?php _e('Post Slug'); ?></option>
-														<option value="type"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'type') { echo "selected='selected'"; } ?>><?php _e('Post Type'); ?></option>
-														<option value="comment_count"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'comment_count') { echo "selected='selected'"; } ?>><?php _e('Comment Count'); ?></option>
-														<option value="parent"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'parent') { echo "selected='selected'"; } ?>><?php _e('Parent'); ?></option>
-														<option value="meta_value"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'meta_value') { echo "selected='selected'"; } ?>><?php _e('Meta Value'); ?></option>
-														<option value="meta_value_num"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'meta_value_num') { echo "selected='selected'"; } ?>><?php _e('Meta Value (Numeric)'); ?></option>
-														<option value="none"<?php if ($archive_control_options[$post_type->name]['orderby'] == 'none') { echo "selected='selected'"; } ?>><?php _e('No Order'); ?></option>
+														<option value="default"<?php if ($orderby_val == null) { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+														<option value="date"<?php if ($orderby_val == 'date') { echo "selected='selected'"; } ?>><?php _e('Date Published'); ?></option>
+														<option value="title"<?php if ($orderby_val == 'title') { echo "selected='selected'"; } ?>><?php _e('Title'); ?></option>
+														<option value="modified"<?php if ($orderby_val == 'modified') { echo "selected='selected'"; } ?>><?php _e('Date Modified'); ?></option>
+														<option value="menu_order"<?php if ($orderby_val == 'menu_order') { echo "selected='selected'"; } ?>><?php _e('Menu Order'); ?></option>
+														<option value="rand"<?php if ($orderby_val == 'rand') { echo "selected='selected'"; } ?>><?php _e('Random'); ?></option>
+														<option value="ID"<?php if ($orderby_val == 'ID') { echo "selected='selected'"; } ?>><?php _e('ID'); ?></option>
+														<option value="author"<?php if ($orderby_val == 'author') { echo "selected='selected'"; } ?>><?php _e('Author'); ?></option>
+														<option value="name"<?php if ($orderby_val == 'name') { echo "selected='selected'"; } ?>><?php _e('Post Slug'); ?></option>
+														<option value="type"<?php if ($orderby_val == 'type') { echo "selected='selected'"; } ?>><?php _e('Post Type'); ?></option>
+														<option value="comment_count"<?php if ($orderby_val == 'comment_count') { echo "selected='selected'"; } ?>><?php _e('Comment Count'); ?></option>
+														<option value="parent"<?php if ($orderby_val == 'parent') { echo "selected='selected'"; } ?>><?php _e('Parent'); ?></option>
+														<option value="meta_value"<?php if ($orderby_val == 'meta_value') { echo "selected='selected'"; } ?>><?php _e('Meta Value'); ?></option>
+														<option value="meta_value_num"<?php if ($orderby_val == 'meta_value_num') { echo "selected='selected'"; } ?>><?php _e('Meta Value (Numeric)'); ?></option>
+														<option value="none"<?php if ($orderby_val == 'none') { echo "selected='selected'"; } ?>><?php _e('No Order'); ?></option>
 													</select>
-													<input class="archive-control-meta-key" type="text" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][meta_key]" value="<?php echo esc_attr($archive_control_options[$post_type->name]['meta_key']); ?>" placeholder="<?php _e('Meta Key'); ?>"<?php if ($archive_control_options[$post_type->name]['orderby'] !== 'meta_value' && $archive_control_options[$post_type->name]['orderby'] !== 'meta_value_num') { echo " style='display:none;'"; } ?>/>
+													<input class="archive-control-meta-key" type="text" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][meta_key]" value="<?php echo esc_attr($meta_key_val); ?>" placeholder="<?php _e('Meta Key'); ?>"<?php if ($orderby_val !== 'meta_value' && $orderby_val !== 'meta_value_num') { echo " style='display:none;'"; } ?>/>
 												</td>
 											</tr>
 											<tr valign="top">
 												<th scope="row"><label><?php _e('Order'); ?></label></th>
 										        <td>
+													<?php
+														$order_val = isset($archive_control_options[$post_type->name]['order']) ? $archive_control_options[$post_type->name]['order'] : null;
+													?>
 													<select name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][order]">
-														<option value="default"<?php if ($archive_control_options[$post_type->name]['orderby'] == null) { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-														<option value="asc"<?php if ($archive_control_options[$post_type->name]['order'] == 'asc') { echo "selected='selected'"; } ?>><?php _e('Ascending'); ?></option>
-														<option value="desc"<?php if ($archive_control_options[$post_type->name]['order'] == 'desc') { echo "selected='selected'"; } ?>><?php _e('Descending'); ?></option>
+														<option value="default"<?php if ($order_val == null) { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+														<option value="asc"<?php if ($order_val == 'asc') { echo "selected='selected'"; } ?>><?php _e('Ascending'); ?></option>
+														<option value="desc"<?php if ($order_val == 'desc') { echo "selected='selected'"; } ?>><?php _e('Descending'); ?></option>
 													</select>
 												</td>
 											</tr>
 											<tr valign="top">
 												<th scope="row"><label><?php _e('Pagination'); ?></label></th>
 										        <td>
+													<?php
+														$pagination_val = isset($archive_control_options[$post_type->name]['pagination']) ? $archive_control_options[$post_type->name]['pagination'] : null;
+														$posts_per_page_val = isset($archive_control_options[$post_type->name]['posts_per_page']) ? $archive_control_options[$post_type->name]['posts_per_page'] : null;
+													?>
 													<select class="archive-control-pagination" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][pagination]">
-														<option value="default"<?php if ($archive_control_options[$post_type->name]['pagination'] == null) { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-														<option value="none"<?php if ($archive_control_options[$post_type->name]['pagination'] == 'none') { echo "selected='selected'"; } ?>><?php _e('No Pagination'); ?></option>
-														<option value="custom"<?php if ($archive_control_options[$post_type->name]['pagination'] == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Posts Per Page'); ?></option>
+														<option value="default"<?php if ($pagination_val == null) { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+														<option value="none"<?php if ($pagination_val == 'none') { echo "selected='selected'"; } ?>><?php _e('No Pagination'); ?></option>
+														<option value="custom"<?php if ($pagination_val == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Posts Per Page'); ?></option>
 													</select>
-													<input class="archive-control-posts-per-page" type="text" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][posts_per_page]" value="<?php echo esc_attr($archive_control_options[$post_type->name]['posts_per_page']); ?>" placeholder="<?php _e('Posts per page'); ?>"<?php if ($archive_control_options[$post_type->name]['pagination'] !== 'custom') { echo " style='display:none;'"; } ?>/>
+													<input class="archive-control-posts-per-page" type="text" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][posts_per_page]" value="<?php echo esc_attr($posts_per_page_val); ?>" placeholder="<?php _e('Posts per page'); ?>"<?php if ($pagination_val !== 'custom') { echo " style='display:none;'"; } ?>/>
 												</td>
 									        </tr>
 										</table>
@@ -467,9 +568,6 @@ class Archive_Control {
 		if ( ! is_admin() ) {
 			if( $query->is_main_query() ){
 				if (is_archive()) {
-					// print "<pre style='background:#FFF;'>";
-					// print_r($query);
-					// print "</pre>";
 					$archive_control_options = get_option('archive_control_options');
 					foreach($archive_control_options as $post_type => $options) {
 						if (is_post_type_archive($post_type)) {
@@ -507,8 +605,13 @@ class Archive_Control {
 			$archive_control_options = get_option('archive_control_options');
 			foreach($archive_control_options as $post_type => $options) {
 				if (is_post_type_archive($post_type)) {
+					$paged = get_query_var( 'paged', 0);
+					if ($options['image'] == 'enabled' && $options['image-placement'] == 'automatic') {
+						if($options['image-pages'] == 'all-pages' || ($options['image-pages'] == 'first' && $paged == 0)) {
+							Archive_Control::archive_control_the_archive_thumbnail();
+						}//handle page all/first options
+					} //image is enabled
 					if ($options['before'] == 'textarea' && $options['before-placement'] == $placement) {
-						$paged = get_query_var( 'paged', 0);
 						if($options['before-pages'] == 'all-pages' || ($options['before-pages'] == 'first' && $paged == 0)) {
 							$archive_control_cpt_before = get_option('archive_control_' . $post_type . '_before');
 							if ($archive_control_cpt_before) {
@@ -517,9 +620,9 @@ class Archive_Control {
 										echo apply_filters( 'the_content', $archive_control_cpt_before );
 									echo "</div>";
 								echo "</div>";
-							} //if has after content
+							} //if has before content
 						}//handle page all/first options
-					} //has after value
+					} //before textarea is enabled
 				} //is_post_type_artchive
 			} //foreach
 		} // is_archive
@@ -548,7 +651,7 @@ class Archive_Control {
 								echo "</div>";
 							}//if has after content
 						} //handle page all/first options
-					} //has after value
+					} //after textarea is enabled
 				} //is_post_type_archive
 			} //foreach
 		} // is_archive
@@ -590,6 +693,55 @@ class Archive_Control {
 		return $title;
 	}
 
+	public static function archive_control_get_archive_thumbnail_id($post_type = null) {
+		if ($post_type === null) {
+			if (is_post_type_archive()) {
+				$post_type = get_query_var('post_type', null);
+			}
+		}
+		$archive_control_cpt_image_id = get_option('archive_control_' . $post_type . '_image');
+		if ($archive_control_cpt_image_id) {
+			if ( wp_attachment_is_image( $archive_control_cpt_image_id ) ) {
+				return $archive_control_cpt_image_id;
+			}
+		}
+	}
+
+	public static function archive_control_get_archive_thumbnail_src($size = null,$post_type = null) {
+		if ($post_type === null) {
+			if (is_post_type_archive()) {
+				$post_type = get_query_var('post_type', null);
+			}
+		}
+		if ($size === null) {
+			$size = 'large';
+		}
+		$featured_img_id = Archive_Control::archive_control_get_archive_thumbnail_id($post_type);
+		if ($featured_img_id) {
+			$featured_img_src = wp_get_attachment_image_src( $featured_img_id, $size );
+			if (is_array($featured_img_src)) {
+				return $featured_img_src[0];
+			}
+		}
+	}
+
+	public static function archive_control_the_archive_thumbnail($size = null,$post_type = null) {
+		if ($post_type === null) {
+			if (is_post_type_archive()) {
+				$post_type = get_query_var('post_type', null);
+			}
+		}
+		if ($size === null) {
+			$size = 'large';
+		}
+		$featured_img_id = Archive_Control::archive_control_get_archive_thumbnail_id($post_type);
+		if ($featured_img_id) {
+			echo "<div class='post-thumbnail archive-thumbnail archive-type-" . esc_attr($post_type) . "'>";
+				echo wp_get_attachment_image($featured_img_id, $size);
+			echo "</div>";
+		}
+	}
+
 }
 
 if ( ! function_exists( 'the_archive_top_content' ) ) {
@@ -601,5 +753,23 @@ if ( ! function_exists( 'the_archive_top_content' ) ) {
 if ( ! function_exists( 'the_archive_bottom_content' ) ) {
     function the_archive_bottom_content() {
 		Archive_Control::archive_control_bottom_content();
+    }
+}
+
+if ( ! function_exists( 'get_archive_thumbnail_id' ) ) {
+    function get_archive_thumbnail_id($post_type = null) {
+		Archive_Control::archive_control_get_archive_thumbnail_id($post_type);
+    }
+}
+
+if ( ! function_exists( 'get_archive_thumbnail_src' ) ) {
+    function get_archive_thumbnail_src($size = null, $post_type = null) {
+		Archive_Control::archive_control_get_archive_thumbnail_src($size, $post_type);
+    }
+}
+
+if ( ! function_exists( 'the_archive_thumbnail' ) ) {
+    function the_archive_thumbnail($size = null, $post_type = null) {
+		Archive_Control::archive_control_the_archive_thumbnail($size, $post_type);
     }
 }
