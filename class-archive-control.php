@@ -185,7 +185,11 @@ class Archive_Control {
 		$archive_control_options = get_option('archive_control_options');
 		if ($archive_control_options) {
 			foreach($archive_control_options as $post_type => $options) {
-				if ($options['title'] == 'custom' || $options['image'] == 'enabled' || $options['before'] == 'textarea' || $options['after'] == 'textarea') {
+				$title_val = isset($options['title']) ? $options['title'] : null;
+				$image_val = isset($options['image']) ? $options['image'] : null;
+				$before_val = isset($options['before']) ? $options['before'] : null;
+				$after_val = isset($options['after']) ? $options['after'] : null;
+				if ($title_val == 'custom' || $image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea') {
 					if ($post_type == 'post') {
 						$parent_slug = 'edit.php';
 					} else {
@@ -265,7 +269,8 @@ class Archive_Control {
 									</div><!-- #major-publishing-actions -->
 								</div><!-- .inside -->
 							</div><!-- #submitdiv -->
-							<?php if ($current_post_type_options['image'] == 'enabled') : ?>
+							<?php $image_val = isset($current_post_type_options['image']) ? $current_post_type_options['image'] : null; ?>
+							<?php if ($image_val == 'enabled') : ?>
 								<div id="featured-image-archive" class="postbox ">
 									<h2 class="hndle"><span><?php _e('Archive Featured Image', 'archive-control'); ?></span></h2>
 									<div class="inside">
