@@ -3,8 +3,8 @@ msgid ""
 msgstr ""
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 "Project-Id-Version: Archive Control\n"
-"POT-Creation-Date: 2016-09-19 23:21-0500\n"
-"PO-Revision-Date: 2016-09-19 23:21-0500\n"
+"POT-Creation-Date: 2016-09-25 21:26-0500\n"
+"PO-Revision-Date: 2016-09-25 21:26-0500\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -20,235 +20,273 @@ msgstr ""
 "X-Poedit-SearchPath-0: .\n"
 "X-Poedit-SearchPathExcluded-0: *.js\n"
 
-#: class-archive-control.php:154
+#: class-archive-control.php:149 class-archive-control.php:270
+#: class-archive-control.php:434
+msgid "Archive Featured Image"
+msgstr ""
+
+#: class-archive-control.php:150 class-archive-control.php:285
+msgid "Set featured image"
+msgstr ""
+
+#: class-archive-control.php:166
 msgid "Settings"
 msgstr ""
 
 #. Plugin Name of the plugin/theme
-#: class-archive-control.php:161 class-archive-control.php:162
+#: class-archive-control.php:179 class-archive-control.php:180
 msgid "Archive Control"
 msgstr ""
 
-#: class-archive-control.php:178 class-archive-control.php:179
+#: class-archive-control.php:196 class-archive-control.php:197
 msgid "Edit Archive Page"
 msgstr ""
 
-#: class-archive-control.php:215
+#: class-archive-control.php:247
 #, php-format
 msgid "Edit %1$s Archive Page"
 msgstr ""
 
-#: class-archive-control.php:225 class-archive-control.php:292
+#: class-archive-control.php:258 class-archive-control.php:359
 msgid "Publish"
 msgstr ""
 
-#: class-archive-control.php:240
+#: class-archive-control.php:289
+msgid "Remove featured image"
+msgstr ""
+
+#: class-archive-control.php:301
 msgid "Enter archive title here"
 msgstr ""
 
-#: class-archive-control.php:247
+#: class-archive-control.php:308
 msgid "Before Archive Loop"
 msgstr ""
 
-#: class-archive-control.php:259
+#: class-archive-control.php:320
 msgid "After Archive Loop"
 msgstr ""
 
-#: class-archive-control.php:281
+#: class-archive-control.php:348
 msgid "Archive Control Settings"
 msgstr ""
 
-#: class-archive-control.php:282
+#: class-archive-control.php:349
 msgid ""
 "You can select options for each custom post type. (If you do not see your "
 "custom post type in this list, you may need to set \"has_archive\" to true.)"
 msgstr ""
 
-#: class-archive-control.php:305
+#: class-archive-control.php:372
 msgid ""
 "Want more control over your Custom Post Types? Here are some other plugins "
 "this one pairs nicely with:"
 msgstr ""
 
-#: class-archive-control.php:330
+#: class-archive-control.php:397
 msgid ""
 "Find yourself using this plugin often? Fuel it's future development with a "
 "nice cup of hot joe!"
 msgstr ""
 
-#: class-archive-control.php:331
+#: class-archive-control.php:398
 msgid "Buy Me a Coffee"
 msgstr ""
 
-#: class-archive-control.php:352
+#: class-archive-control.php:419
 msgid "Archive Title"
 msgstr ""
 
-#: class-archive-control.php:355 class-archive-control.php:366
-#: class-archive-control.php:385 class-archive-control.php:404
-#: class-archive-control.php:427 class-archive-control.php:437
+#: class-archive-control.php:425 class-archive-control.php:476
+#: class-archive-control.php:506 class-archive-control.php:530
+#: class-archive-control.php:556 class-archive-control.php:570
 msgid "Do not modify"
 msgstr ""
 
-#: class-archive-control.php:356
+#: class-archive-control.php:426
 msgid "Remove Labels (Archive, Category, Tag, etc.)"
 msgstr ""
 
-#: class-archive-control.php:357
+#: class-archive-control.php:427
 msgid "Custom Override"
 msgstr ""
 
-#: class-archive-control.php:359
+#: class-archive-control.php:430
 msgid "This requires that your theme use the_archive_title() function."
 msgstr ""
 
-#: class-archive-control.php:359 class-archive-control.php:377
-#: class-archive-control.php:378 class-archive-control.php:396
-#: class-archive-control.php:397
+#: class-archive-control.php:430 class-archive-control.php:459
+#: class-archive-control.php:461 class-archive-control.php:490
+#: class-archive-control.php:492 class-archive-control.php:517
+#: class-archive-control.php:518
 msgid "Edit"
 msgstr ""
 
-#: class-archive-control.php:363
-msgid "Content Before List"
+#: class-archive-control.php:445
+msgid "Disabled"
 msgstr ""
 
-#: class-archive-control.php:367 class-archive-control.php:386
-msgid "Enable Textarea"
+#: class-archive-control.php:446
+msgid "Enabled"
 msgstr ""
 
-#: class-archive-control.php:370 class-archive-control.php:389
-msgid "All Page Numbers"
-msgstr ""
-
-#: class-archive-control.php:371 class-archive-control.php:390
-msgid "First Page Only"
-msgstr ""
-
-#: class-archive-control.php:374 class-archive-control.php:393
+#: class-archive-control.php:450 class-archive-control.php:481
+#: class-archive-control.php:510
 msgid "Automatic"
 msgstr ""
 
-#: class-archive-control.php:375 class-archive-control.php:394
+#: class-archive-control.php:451 class-archive-control.php:482
+#: class-archive-control.php:511
 msgid "Manual Function"
 msgstr ""
 
-#: class-archive-control.php:377
+#: class-archive-control.php:455 class-archive-control.php:486
+#: class-archive-control.php:514
+msgid "All Page Numbers"
+msgstr ""
+
+#: class-archive-control.php:456 class-archive-control.php:487
+#: class-archive-control.php:515
+msgid "First Page Only"
+msgstr ""
+
+#: class-archive-control.php:459
+msgid ""
+"The image will be automatically added to the archive page before the posts "
+"loop."
+msgstr ""
+
+#: class-archive-control.php:461
+msgid ""
+"The image will be added if you place the_archive_thumbnail(\"large\") within "
+"your theme files."
+msgstr ""
+
+#: class-archive-control.php:465
+msgid "Content Before List"
+msgstr ""
+
+#: class-archive-control.php:477 class-archive-control.php:507
+msgid "Enable Textarea"
+msgstr ""
+
+#: class-archive-control.php:490
 msgid ""
 "The content will be automatically added to the archive page before the posts "
 "loop."
 msgstr ""
 
-#: class-archive-control.php:378
+#: class-archive-control.php:492
 msgid ""
 "The content will be added if you place  the_archive_top_content() within "
 "your theme files."
 msgstr ""
 
-#: class-archive-control.php:382
+#: class-archive-control.php:496
 msgid "Content After List"
 msgstr ""
 
-#: class-archive-control.php:396
+#: class-archive-control.php:517
 msgid ""
 "The content will be automatically added to the archive page after the posts "
 "loop."
 msgstr ""
 
-#: class-archive-control.php:397
+#: class-archive-control.php:518
 msgid ""
 "The content will be added if you place  the_archive_bottom_content() within "
 "your theme files."
 msgstr ""
 
-#: class-archive-control.php:401
+#: class-archive-control.php:522
 msgid "Order By"
 msgstr ""
 
-#: class-archive-control.php:405
+#: class-archive-control.php:531
 msgid "Date Published"
 msgstr ""
 
-#: class-archive-control.php:406
+#: class-archive-control.php:532
 msgid "Title"
 msgstr ""
 
-#: class-archive-control.php:407
+#: class-archive-control.php:533
 msgid "Date Modified"
 msgstr ""
 
-#: class-archive-control.php:408
+#: class-archive-control.php:534
 msgid "Menu Order"
 msgstr ""
 
-#: class-archive-control.php:409
+#: class-archive-control.php:535
 msgid "Random"
 msgstr ""
 
-#: class-archive-control.php:410
+#: class-archive-control.php:536
 msgid "ID"
 msgstr ""
 
-#: class-archive-control.php:411
+#: class-archive-control.php:537
 msgid "Author"
 msgstr ""
 
-#: class-archive-control.php:412
+#: class-archive-control.php:538
 msgid "Post Slug"
 msgstr ""
 
-#: class-archive-control.php:413
+#: class-archive-control.php:539
 msgid "Post Type"
 msgstr ""
 
-#: class-archive-control.php:414
+#: class-archive-control.php:540
 msgid "Comment Count"
 msgstr ""
 
-#: class-archive-control.php:415
+#: class-archive-control.php:541
 msgid "Parent"
 msgstr ""
 
-#: class-archive-control.php:416
+#: class-archive-control.php:542
 msgid "Meta Value"
 msgstr ""
 
-#: class-archive-control.php:417
+#: class-archive-control.php:543
 msgid "Meta Value (Numeric)"
 msgstr ""
 
-#: class-archive-control.php:418
+#: class-archive-control.php:544
 msgid "No Order"
 msgstr ""
 
-#: class-archive-control.php:420
+#: class-archive-control.php:546
 msgid "Meta Key"
 msgstr ""
 
-#: class-archive-control.php:424
+#: class-archive-control.php:550
 msgid "Order"
 msgstr ""
 
-#: class-archive-control.php:428
+#: class-archive-control.php:557
 msgid "Ascending"
 msgstr ""
 
-#: class-archive-control.php:429
+#: class-archive-control.php:558
 msgid "Descending"
 msgstr ""
 
-#: class-archive-control.php:434
+#: class-archive-control.php:563
 msgid "Pagination"
 msgstr ""
 
-#: class-archive-control.php:438
-msgid "No Pagination"
+#: class-archive-control.php:571
+msgid "Show Everything"
 msgstr ""
 
-#: class-archive-control.php:439
+#: class-archive-control.php:572
 msgid "Custom Posts Per Page"
 msgstr ""
 
-#: class-archive-control.php:441
+#: class-archive-control.php:574
 msgid "Posts per page"
 msgstr ""
 
