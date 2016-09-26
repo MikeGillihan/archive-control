@@ -4,7 +4,7 @@ Donate link: http://switchthemes.com/archive-control/
 Tags: custom post type, post type, post types, archive, title, order, pagination
 Requires at least: 4.1
 Tested up to: 4.6.1
-Stable tag: 1.1
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,8 +19,11 @@ Upon installing the plugin, you'll be able to set/enable these options for each 
 *   **Archive Titles:** If your theme is using the_archive_title() function, then you can modify the your archive titles.
     * Remove Labels (Archive, Category, Tag, etc.) - Sometimes you just want to get rid of the annoying default words.
     * Custom Override - Allow an editor to write something custom for an archive headline.
+
 *   **Archive Featured Image:** You can allow for a custom featured image that applies to an archive page and have it added automatically, or add it yourself via a theme function.
+
 *   **Content Before or After Archive List:** Give your site editors the ability to edit content directly before or after the archive list. You can have it automatically added, or use a theme function to give you more control over their placement (see "Functions" tab).
+
 *   **Archive Order By:** Instead of messing with code to change the order of a custom post type archive, now you can do it in a few clicks.
     * Date Published
     * Title
@@ -39,6 +42,7 @@ Upon installing the plugin, you'll be able to set/enable these options for each 
 *   **Archive Order:** In addition to the order by value, you'll also want to change the order.
     * Ascending
     * Descending
+
 *   **Archive Pagination:** The pagination settings are easy to change without changing code.
     * Show Everything
     * Custom Posts Per Page
@@ -91,9 +95,7 @@ Added Archive Featured Image functionality and functions for developers
 = 1.0 =
 Initial Version
 
-== Functions ==
-
-### Functions Provided by the Plugin ###
+== Functions Provided by the Plugin ==
 
 **the_archive_top_content( _boolean_ $html = true)**
 > Displays the _top_ archive content on an archive page. Additional html markup can be removed by setting false.
