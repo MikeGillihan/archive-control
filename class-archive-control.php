@@ -24,7 +24,7 @@ class Archive_Control {
 	 *
 	 * @const   string
 	 */
-	const VERSION = '1.0.0';
+	const VERSION = '1.1.0';
 
 	/**
 	 * Unique identifier for your plugin.
@@ -61,13 +61,15 @@ class Archive_Control {
 	 *
 	 * @since     1.0.0
 	 */
-	private function __construct() {
+	private function __construct()
+	{
 
 		add_action( 'plugins_loaded', array( $this, 'load_plugin_textdomain' ) );
 		add_filter( 'plugin_action_links_archive-control/archive-control.php', array( $this, 'archive_control_action_link' ) );
 		add_action( 'pre_get_posts', array( $this, 'archive_control_modify_archive_query' ), 1 );
-		add_action( 'loop_start', array( $this, 'archive_control_loop_start' ) );
-		add_action( 'loop_end', array( $this, 'archive_control_loop_end' ) );
+		add_action( 'loop_start', array( $this, 'archive_control_loop_start_image' ), 2 );
+		add_action( 'loop_start', array( $this, 'archive_control_loop_start_content' ), 6 );
+		add_action( 'loop_end', array( $this, 'archive_control_loop_end_content' ) );
 		add_action( 'admin_menu', array( $this, 'archive_control_menu' ) );
 		add_action( 'admin_init', array( $this, 'archive_control_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'archive_control_custom_admin_style_scripts' ) );
@@ -82,7 +84,8 @@ class Archive_Control {
 	 *
 	 * @return    object    A single instance of this class.
 	 */
-	public static function get_instance() {
+	public static function get_instance()
+	{
 
 		// If the single instance hasn't been set, set it now.
 		if ( null == self::$instance ) {
@@ -99,7 +102,8 @@ class Archive_Control {
 	 *
 	 * @param    boolean    $network_wide    True if WPMU superadmin uses "Network Activate" action, false if WPMU is disabled or plugin is activated on an individual blog.
 	 */
-	public static function activate( $network_wide ) {
+	public static function activate( $network_wide )
+	{
 
 	}
 
@@ -110,16 +114,18 @@ class Archive_Control {
 	 *
 	 * @param    boolean    $network_wide    True if WPMU superadmin uses "Network Deactivate" action, false if WPMU is disabled or plugin is deactivated on an individual blog.
 	 */
-	public static function deactivate( $network_wide ) {
+	public static function deactivate( $network_wide )
+	{
 
 	}
 
 	/**
 	 * Load the plugin text domain for translation.
 	 *
-	 * @since    1.0.2
+	 * @since    1.0.0
 	 */
-	public function load_plugin_textdomain() {
+	public function load_plugin_textdomain()
+	{
 
 		$domain = $this->plugin_slug;
 		$locale = apply_filters( 'plugin_locale', get_locale(), $domain );
@@ -129,39 +135,46 @@ class Archive_Control {
 
 	}
 
-
 	/**
-	* NOTE:  Actions are points in the execution of a page or process
-	*        lifecycle that WordPress fires.
-	*
-	*        WordPress Actions: http://codex.wordpress.org/Plugin_API#Actions
-	*        Action Reference:  http://codex.wordpress.org/Plugin_API/Action_Reference
-	*
-	* @since    1.0.0
-	*/
-
-	public function archive_control_custom_admin_style_scripts() {
-		wp_register_style( 'archive_control_admin_css', plugin_dir_url( __FILE__ ) . '/css/admin-style.css', false, '1.0' );
+	 * Load up custom css and js used in the admin panels for this plugin
+	 *
+	 * @since    1.0.0
+	 */
+	public function archive_control_custom_admin_style_scripts()
+	{
+		wp_register_style( 'archive_control_admin_css', plugin_dir_url( __FILE__ ) . '/css/admin-style.css', false, self::VERSION );
 		wp_enqueue_style( 'archive_control_admin_css' );
-		wp_register_script( 'archive_control_admin_js', plugin_dir_url( __FILE__ ) . '/js/admin-scripts.js', 'jquery', '1.0', true );
-		$translation_array = array(
+		wp_register_script( 'archive_control_admin_js', plugin_dir_url( __FILE__ ) . '/js/admin-scripts.js', 'jquery', self::VERSION, true );
+		$js_translations = array(
 			'media_upload_title_text' => __( 'Archive Featured Image', 'archive-control' ),
 			'media_upload_button_text' => __( 'Set featured image', 'archive-control' )
 		);
-		wp_localize_script( 'archive_control_admin_js', 'archive_control', $translation_array );
+		wp_localize_script( 'archive_control_admin_js', 'archive_control', $js_translations );
 		wp_enqueue_script( 'archive_control_admin_js' );
 	}
 
-
-
-	public function archive_control_action_link( $links ) {
+	/**
+	 * Used to insert a "Settings" link on the Plugin activation screen
+	 *
+	 * @since    1.0.0
+	 *
+	 * @param    array    $links    The array of existing links for the plugin
+	 */
+	public function archive_control_action_link( $links )
+	{
 		$mylinks = array(
 			'<a href="' . admin_url( 'options-general.php?page=archive-control.php' ) . '">' . __('Settings', 'archive-control') . '</a>',
 		);
 		return array_merge( $links, $mylinks );
 	}
 
-	public function archive_control_menu() {
+	/**
+	 * Activate the settings screens for the plugin
+	 *
+	 * @since    1.0.0
+	 */
+	public function archive_control_menu()
+	{
 		add_options_page(
 			__('Archive Control', 'archive-control'),
 			__('Archive Control', 'archive-control'),
@@ -191,7 +204,13 @@ class Archive_Control {
 		}
 	}
 
-	public function archive_control_settings() {
+	/**
+	 * Register the necessary settings to store for plugin use.
+	 *
+	 * @since    1.0.0
+	 */
+	public function archive_control_settings()
+	{
 		register_setting( 'archive-control-options-group', 'archive_control_options' );
 		$archive_control_options = get_option('archive_control_options');
 		if ($archive_control_options) {
@@ -204,7 +223,13 @@ class Archive_Control {
 		}
 	}
 
-	public function archive_control_edit_page_callback() {
+	/**
+	 * The variable settings screen that can be activated per custom post type
+	 *
+	 * @since    1.0.0
+	 */
+	public function archive_control_edit_page_callback()
+	{
 		$screen = get_current_screen();
 		$current_post_type = $screen->post_type;
 		$archive_control_options = get_option('archive_control_options');
@@ -220,6 +245,7 @@ class Archive_Control {
 		?>
 		<div id="archive-control-edit-page" class="wrap">
 			<h1><?php printf(esc_html__( 'Edit %1$s Archive Page', 'archive-control' ),$current_post_type_object->label); ?></h1>
+			<?php settings_errors(); ?>
 			<form method="post" action="options.php">
 				<?php
 				settings_fields( 'archive-control-' . $current_post_type . '-group' );
@@ -310,7 +336,13 @@ class Archive_Control {
 		<?php
 	}
 
-	public function archive_control_options(){
+	/**
+	 * The primary settings screen for the plugin
+	 *
+	 * @since    1.0.0
+	 */
+	public function archive_control_options()
+	{
 		?>
 		<div id="archive-control-options" class="wrap">
 			<h1><?php _e('Archive Control Settings', 'archive-control'); ?></h1>
@@ -390,7 +422,7 @@ class Archive_Control {
 														$title_val = isset($archive_control_options[$post_type->name]['title']) ? $archive_control_options[$post_type->name]['title'] : null;
 													?>
 													<select class="archive-control-title" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][title]">
-														<option value="default"<?php if ($title_val == null || $title_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+														<option value="default"<?php if ($title_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
 														<option value="no-labels"<?php if ($title_val == 'no-labels') { echo "selected='selected'"; } ?>><?php _e('Remove Labels (Archive, Category, Tag, etc.)', 'archive-control'); ?></option>
 														<option value="custom"<?php if ($title_val == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Override', 'archive-control'); ?></option>
 													</select>
@@ -410,17 +442,17 @@ class Archive_Control {
 													?>
 
 													<select class="archive-control-image" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][image]">
-														<option value="disabled"<?php if ($image_val == null || $image_val == 'disabled') { echo "selected='selected'"; } ?>><?php _e('Disabled', 'archive-control'); ?></option>
+														<option value="disabled"<?php if ($image_val == 'disabled') { echo "selected='selected'"; } ?>><?php _e('Disabled', 'archive-control'); ?></option>
 														<option value="enabled"<?php if ($image_val == 'enabled') { echo "selected='selected'"; } ?>><?php _e('Enabled', 'archive-control'); ?></option>
 													</select>
 
 													<select class="archive-control-image-placement" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][image-placement]"<?php if ($image_val !== 'enabled') { echo " style='display:none;'"; } ?>>
-														<option value="automatic"<?php if ($image_placement_val == null || $image_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
+														<option value="automatic"<?php if ($image_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
 														<option value="function"<?php if ($image_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
 													</select>
 
 													<select class="archive-control-image-pages" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][image-pages]"<?php if ($image_val !== 'enabled') { echo " style='display:none;'"; } ?>>
-														<option value="all-pages"<?php if ($image_pages_val == null || $image_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
+														<option value="all-pages"<?php if ($image_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
 														<option value="first"<?php if ($image_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
 													</select>
 
@@ -441,17 +473,17 @@ class Archive_Control {
 													?>
 
 													<select class="archive-control-before" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][before]">
-														<option value="default"<?php if ($before_val == null || $before_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+														<option value="default"<?php if ($before_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
 														<option value="textarea"<?php if ($before_val == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enable Textarea'); ?></option>
 													</select>
 
 													<select class="archive-control-before-placement" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][before-placement]"<?php if ($before_val !== 'textarea') { echo " style='display:none;'"; } ?>>
-														<option value="automatic"<?php if ($before_placement_val == null || $before_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
+														<option value="automatic"<?php if ($before_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
 														<option value="function"<?php if ($before_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
 													</select>
 
 													<select class="archive-control-before-pages" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][before-pages]"<?php if ($before_val !== 'textarea') { echo " style='display:none;'"; } ?>>
-														<option value="all-pages"<?php if ($before_pages_val == null || $before_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
+														<option value="all-pages"<?php if ($before_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
 														<option value="first"<?php if ($before_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
 													</select>
 
@@ -471,15 +503,15 @@ class Archive_Control {
 														$after_pages_val = isset($archive_control_options[$post_type->name]['after-pages']) ? $archive_control_options[$post_type->name]['after-pages'] : null;
 													?>
 													<select class="archive-control-after" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][after]">
-														<option value="default"<?php if ($after_val == null || $after_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+														<option value="default"<?php if ($after_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
 														<option value="textarea"<?php if ($after_val == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enable Textarea'); ?></option>
 													</select>
 													<select class="archive-control-after-placement" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][after-placement]"<?php if ($after_val !== 'textarea') { echo " style='display:none;'"; } ?>>
-														<option value="automatic"<?php if ($after_placement_val == null || $after_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
+														<option value="automatic"<?php if ($after_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
 														<option value="function"<?php if ($after_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
 													</select>
 													<select class="archive-control-after-pages" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][after-pages]"<?php if ($after_val !== 'textarea') { echo " style='display:none;'"; } ?>>
-														<option value="all-pages"<?php if ($after_pages_val == null || $after_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
+														<option value="all-pages"<?php if ($after_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
 														<option value="first"<?php if ($after_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
 													</select>
 													<div class="archive-control-info archive-control-after-automatic-message" <?php if ($after_val !== 'textarea' || $after_placement_val !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The content will be automatically added to the archive page after the posts loop.'); ?><?php if ($after_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
@@ -495,7 +527,7 @@ class Archive_Control {
 														$meta_key_val = isset($archive_control_options[$post_type->name]['meta_key']) ? $archive_control_options[$post_type->name]['meta_key'] : null;
 													?>
 													<select class="archive-control-order-by" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][orderby]">
-														<option value="default"<?php if ($orderby_val == null) { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+														<option value="default"<?php if ($orderby_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
 														<option value="date"<?php if ($orderby_val == 'date') { echo "selected='selected'"; } ?>><?php _e('Date Published'); ?></option>
 														<option value="title"<?php if ($orderby_val == 'title') { echo "selected='selected'"; } ?>><?php _e('Title'); ?></option>
 														<option value="modified"<?php if ($orderby_val == 'modified') { echo "selected='selected'"; } ?>><?php _e('Date Modified'); ?></option>
@@ -521,7 +553,7 @@ class Archive_Control {
 														$order_val = isset($archive_control_options[$post_type->name]['order']) ? $archive_control_options[$post_type->name]['order'] : null;
 													?>
 													<select name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][order]">
-														<option value="default"<?php if ($order_val == null) { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+														<option value="default"<?php if ($order_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
 														<option value="asc"<?php if ($order_val == 'asc') { echo "selected='selected'"; } ?>><?php _e('Ascending'); ?></option>
 														<option value="desc"<?php if ($order_val == 'desc') { echo "selected='selected'"; } ?>><?php _e('Descending'); ?></option>
 													</select>
@@ -535,8 +567,8 @@ class Archive_Control {
 														$posts_per_page_val = isset($archive_control_options[$post_type->name]['posts_per_page']) ? $archive_control_options[$post_type->name]['posts_per_page'] : null;
 													?>
 													<select class="archive-control-pagination" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][pagination]">
-														<option value="default"<?php if ($pagination_val == null) { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-														<option value="none"<?php if ($pagination_val == 'none') { echo "selected='selected'"; } ?>><?php _e('No Pagination'); ?></option>
+														<option value="default"<?php if ($pagination_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+														<option value="none"<?php if ($pagination_val == 'none') { echo "selected='selected'"; } ?>><?php _e('Show Everything'); ?></option>
 														<option value="custom"<?php if ($pagination_val == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Posts Per Page'); ?></option>
 													</select>
 													<input class="archive-control-posts-per-page" type="text" name="archive_control_options[<?php echo esc_attr($post_type->name); ?>][posts_per_page]" value="<?php echo esc_attr($posts_per_page_val); ?>" placeholder="<?php _e('Posts per page'); ?>"<?php if ($pagination_val !== 'custom') { echo " style='display:none;'"; } ?>/>
@@ -564,7 +596,15 @@ class Archive_Control {
 		<?php
 	}
 
-	public function archive_control_modify_archive_query( $query ) {
+	/**
+	 * Modify the existing WordPress query for certain archive pages according to the settings
+	 *
+	 * @since    1.0.0
+	 *
+	 * @param    object    $query    The existing WordPress query
+	 */
+	public function archive_control_modify_archive_query( $query )
+	{
 		if ( ! is_admin() ) {
 			if( $query->is_main_query() ){
 				if (is_archive()) {
@@ -600,27 +640,38 @@ class Archive_Control {
 	    return;
 	}
 
-	public static function archive_control_top_content($placement = 'function'){
+	/**
+	 * Insert some content above the WordPress loop on certain archive pages
+	 *
+	 * @since    1.1.0
+	 *
+	 * @param    object    $query    The existing WordPress query object
+	 */
+	public function archive_control_loop_start_content( $query )
+	{
+		if( $query->is_main_query() ){
+			$this->archive_control_the_archive_top_content(true,'automatic');
+		} //is_main_query
+	}
+
+	/**
+	 * Insert some content above the WordPress loop on certain archive pages
+	 *
+	 * @since    1.1.0
+	 *
+	 * @param    boolean    $html        Whether to show the optional html markup surrounding the textarea
+	 * @param    string    	$placement	 Whether the content will be placed automatically or by a theme function
+	 */
+	public static function archive_control_the_archive_top_content($html = true, $placement = 'function')
+	{
 		if (is_archive()) {
 			$archive_control_options = get_option('archive_control_options');
 			foreach($archive_control_options as $post_type => $options) {
 				if (is_post_type_archive($post_type)) {
-					$paged = get_query_var( 'paged', 0);
-					if ($options['image'] == 'enabled' && $options['image-placement'] == 'automatic') {
-						if($options['image-pages'] == 'all-pages' || ($options['image-pages'] == 'first' && $paged == 0)) {
-							Archive_Control::archive_control_the_archive_thumbnail();
-						}//handle page all/first options
-					} //image is enabled
 					if ($options['before'] == 'textarea' && $options['before-placement'] == $placement) {
+						$paged = get_query_var( 'paged', 0);
 						if($options['before-pages'] == 'all-pages' || ($options['before-pages'] == 'first' && $paged == 0)) {
-							$archive_control_cpt_before = get_option('archive_control_' . $post_type . '_before');
-							if ($archive_control_cpt_before) {
-								echo "<div class='archive-control-area archive-control-before'>";
-									echo "<div class='archive-control-area-inside'>";
-										echo apply_filters( 'the_content', $archive_control_cpt_before );
-									echo "</div>";
-								echo "</div>";
-							} //if has before content
+							Archive_Control::archive_control_archive_top_content(true, $post_type);
 						}//handle page all/first options
 					} //before textarea is enabled
 				} //is_post_type_artchive
@@ -628,13 +679,179 @@ class Archive_Control {
 		} // is_archive
 	}
 
-	public function archive_control_loop_start( $query ){
+	/**
+	 * Insert the top content
+	 *
+	 * @since    1.1.0
+	 *
+	 * @param    boolean    $html        Whether to show the optional html markup surrounding the textarea
+	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 */
+	public static function archive_control_archive_top_content($html = true, $post_type = null)
+	{
+		$content = Archive_Control::archive_control_get_archive_top_content($post_type);
+		if ($content) {
+			if ($html === true) {
+				echo "<div class='archive-control-area archive-control-area-before'>";
+				echo "<div class='archive-control-area-inside'>";
+			}
+			echo $content;
+			if ($html === true) {
+				echo "</div>";
+				echo "</div>";
+			}
+		}
+	}
+
+	/**
+	 * Return the top content
+	 *
+	 * @since    1.1.0
+	 *
+	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 */
+	public static function archive_control_get_archive_top_content($post_type = null)
+	{
+		if ($post_type === null) {
+			if (is_post_type_archive()) {
+				$post_type = get_query_var('post_type', null);
+			}
+		}
+		$archive_control_cpt_before = get_option('archive_control_' . $post_type . '_before');
+		if ($archive_control_cpt_before) {
+			return apply_filters( 'the_content', $archive_control_cpt_before );
+		} //if has before content
+	}
+
+	/**
+	 * Insert some content above the WordPress loop
+	 *
+	 * @since    1.1.0
+	 *
+	 * @param    object    $query        The existing WordPress query object
+	 */
+	public function archive_control_loop_start_image( $query ){
 		if( $query->is_main_query() ){
-			$this->archive_control_top_content('automatic');
+			$this->archive_control_display_archive_top_image();
 		} //is_main_query
 	}
 
-	public static function archive_control_bottom_content($placement = 'function'){
+	/**
+	 * Decide if the archive featured image should be automatically placed
+	 *
+	 * @since    1.1.0
+	 */
+	public static function archive_control_display_archive_top_image()
+	{
+		if (is_archive()) {
+			$archive_control_options = get_option('archive_control_options');
+			foreach($archive_control_options as $post_type => $options) {
+				if (is_post_type_archive($post_type)) {
+					if ($options['image'] == 'enabled' && $options['image-placement'] == 'automatic') {
+						$paged = get_query_var( 'paged', 0);
+						if($options['image-pages'] == 'all-pages' || ($options['image-pages'] == 'first' && $paged == 0)) {
+							Archive_Control::archive_control_the_archive_thumbnail();
+						}//handle page all/first options
+					} //image is enabled
+				} //is_post_type_artchive
+			} //foreach
+		} // is_archive
+	}
+
+	/**
+	 * Echo the archive thumbnail with markup
+	 *
+	 * @since    1.1.0
+	 *
+	 * @param    string     $size        The image size that you want displayed
+	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 */
+	public static function archive_control_the_archive_thumbnail($size = 'large', $post_type = null)
+	{
+		if ($post_type === null) {
+			if (is_post_type_archive()) {
+				$post_type = get_query_var('post_type', null);
+			}
+		}
+		$featured_img_id = Archive_Control::archive_control_get_archive_thumbnail_id($post_type);
+		if ($featured_img_id) {
+			echo "<div class='post-thumbnail archive-thumbnail archive-type-" . esc_attr($post_type) . "'>";
+				echo wp_get_attachment_image($featured_img_id, $size);
+			echo "</div>";
+		}
+	}
+
+	/**
+	 * Echo the archive thumbnail with html markup
+	 *
+	 * @since    1.1.0
+	 *
+	 * @param    string     $size        The image size that you want displayed
+	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 */
+	public static function archive_control_get_archive_thumbnail_src($size = 'large', $post_type = null)
+	{
+		if ($post_type === null) {
+			if (is_post_type_archive()) {
+				$post_type = get_query_var('post_type', null);
+			}
+		}
+		$featured_img_id = Archive_Control::archive_control_get_archive_thumbnail_id($post_type);
+		if ($featured_img_id) {
+			$featured_img_src = wp_get_attachment_image_src( $featured_img_id, $size );
+			if (is_array($featured_img_src)) {
+				$thing = $featured_img_src[0];
+				return $thing;
+			}
+		}
+	}
+
+	/**
+	 * Get the archive thumbnail id
+	 *
+	 * @since    1.1.0
+	 *
+	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 */
+	public static function archive_control_get_archive_thumbnail_id($post_type = null)
+	{
+		if ($post_type === null) {
+			if (is_post_type_archive()) {
+				$post_type = get_query_var('post_type', null);
+			}
+		}
+		$archive_control_cpt_image_id = get_option('archive_control_' . $post_type . '_image');
+		if ($archive_control_cpt_image_id) {
+			if ( wp_attachment_is_image( $archive_control_cpt_image_id ) ) {
+				return $archive_control_cpt_image_id;
+			}
+		}
+	}
+
+	/**
+	 * Insert some content below the WordPress loop on certain archive pages
+	 *
+	 * @since    1.1.0
+	 *
+	 * @param    object    $query    The existing WordPress query object
+	 */
+	public function archive_control_loop_end_content( $query )
+	{
+		if( $query->is_main_query() ){
+			$this->archive_control_the_archive_bottom_content(true,'automatic');
+		} //is_main_query
+	}
+
+	/**
+	 * Insert some content below the WordPress loop on certain archive pages
+	 *
+	 * @since    1.1.0
+	 *
+	 * @param    boolean    $html        Whether to show the optional html markup surrounding the textarea
+	 * @param    string    	$placement	 Whether the content will be placed automatically or by a theme function
+	 */
+	public static function archive_control_the_archive_bottom_content($html = true, $placement = 'function')
+	{
 		if (is_archive()) {
 			$archive_control_options = get_option('archive_control_options');
 			foreach($archive_control_options as $post_type => $options) {
@@ -642,28 +859,67 @@ class Archive_Control {
 					if ($options['after'] == 'textarea' && $options['after-placement'] == $placement) {
 						$paged = get_query_var( 'paged', 0);
 						if($options['after-pages'] == 'all-pages' || ($options['after-pages'] == 'first' && $paged == 0)) {
-							$archive_control_cpt_after = get_option('archive_control_' . $post_type . '_after');
-							if ($archive_control_cpt_after) {
-								echo "<div class='archive-control-area archive-control-after'>";
-									echo "<div class='archive-control-area-inside'>";
-										echo apply_filters( 'the_content', $archive_control_cpt_after );
-									echo "</div>";
-								echo "</div>";
-							}//if has after content
-						} //handle page all/first options
-					} //after textarea is enabled
-				} //is_post_type_archive
+							Archive_Control::archive_control_archive_bottom_content(true, $post_type);
+						}//handle page all/first options
+					} //before textarea is enabled
+				} //is_post_type_artchive
 			} //foreach
 		} // is_archive
 	}
 
-	public function archive_control_loop_end( $query ){
-		if( $query->is_main_query() ){
-			$this->archive_control_bottom_content('automatic');
-		} //is_main_query
+	/**
+	 * Insert the bottom content
+	 *
+	 * @since    1.1.0
+	 *
+	 * @param    boolean    $html        Whether to show the optional html markup surrounding the textarea
+	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 */
+	public static function archive_control_archive_bottom_content($html = true, $post_type = null)
+	{
+		$content = Archive_Control::archive_control_get_archive_bottom_content($post_type);
+		if ($content) {
+			if ($html === true) {
+				echo "<div class='archive-control-area archive-control-area-after'>";
+				echo "<div class='archive-control-area-inside'>";
+			}
+			echo $content;
+			if ($html === true) {
+				echo "</div>";
+				echo "</div>";
+			}
+		}
 	}
 
-	public function archive_control_title_filter($title) {
+	/**
+	 * Return the bottom content
+	 *
+	 * @since    1.1.0
+	 *
+	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 */
+	public static function archive_control_get_archive_bottom_content($post_type = null)
+	{
+		if ($post_type === null) {
+			if (is_post_type_archive()) {
+				$post_type = get_query_var('post_type', null);
+			}
+		}
+		$archive_control_cpt_after = get_option('archive_control_' . $post_type . '_after');
+		if ($archive_control_cpt_after) {
+			return apply_filters( 'the_content', $archive_control_cpt_after );
+		} //if has after content
+	}
+
+	/**
+	 * Modify the archive title based on the user settings
+	 *
+	 * @since    1.0.0
+	 *
+	 * @param    string    	$title	 The existing archive page title
+	 */
+	public function archive_control_title_filter($title)
+	{
 		if (is_archive()) {
 			$archive_control_options = get_option('archive_control_options');
 			foreach($archive_control_options as $post_type => $options) {
@@ -693,82 +949,66 @@ class Archive_Control {
 		return $title;
 	}
 
-	public static function archive_control_get_archive_thumbnail_id($post_type = null) {
-		if ($post_type === null) {
-			if (is_post_type_archive()) {
-				$post_type = get_query_var('post_type', null);
-			}
-		}
-		$archive_control_cpt_image_id = get_option('archive_control_' . $post_type . '_image');
-		if ($archive_control_cpt_image_id) {
-			if ( wp_attachment_is_image( $archive_control_cpt_image_id ) ) {
-				return $archive_control_cpt_image_id;
-			}
-		}
-	}
-
-	public static function archive_control_get_archive_thumbnail_src($size = null,$post_type = null) {
-		if ($post_type === null) {
-			if (is_post_type_archive()) {
-				$post_type = get_query_var('post_type', null);
-			}
-		}
-		if ($size === null) {
-			$size = 'large';
-		}
-		$featured_img_id = Archive_Control::archive_control_get_archive_thumbnail_id($post_type);
-		if ($featured_img_id) {
-			$featured_img_src = wp_get_attachment_image_src( $featured_img_id, $size );
-			if (is_array($featured_img_src)) {
-				return $featured_img_src[0];
-			}
-		}
-	}
-
-	public static function archive_control_the_archive_thumbnail($size = null,$post_type = null) {
-		if ($post_type === null) {
-			if (is_post_type_archive()) {
-				$post_type = get_query_var('post_type', null);
-			}
-		}
-		if ($size === null) {
-			$size = 'large';
-		}
-		$featured_img_id = Archive_Control::archive_control_get_archive_thumbnail_id($post_type);
-		if ($featured_img_id) {
-			echo "<div class='post-thumbnail archive-thumbnail archive-type-" . esc_attr($post_type) . "'>";
-				echo wp_get_attachment_image($featured_img_id, $size);
-			echo "</div>";
-		}
-	}
-
 }
 
-if ( ! function_exists( 'the_archive_top_content' ) ) {
-    function the_archive_top_content() {
-		Archive_Control::archive_control_top_content();
+if ( ! function_exists( 'the_archive_top_content' ) )
+{
+    function the_archive_top_content($html = true) {
+		Archive_Control::archive_control_the_archive_top_content($html);
     }
 }
 
-if ( ! function_exists( 'the_archive_bottom_content' ) ) {
-    function the_archive_bottom_content() {
-		Archive_Control::archive_control_bottom_content();
+if ( ! function_exists( 'archive_top_content' ) )
+{
+    function archive_top_content($html = true, $post_type = null) {
+		Archive_Control::archive_control_archive_top_content($html, $post_type);
     }
 }
 
-if ( ! function_exists( 'get_archive_thumbnail_id' ) ) {
+if ( ! function_exists( 'get_archive_top_content' ) )
+{
+    function get_archive_top_content($post_type = null) {
+		return Archive_Control::archive_control_get_archive_top_content($post_type);
+    }
+}
+
+if ( ! function_exists( 'the_archive_bottom_content' ) )
+{
+    function the_archive_bottom_content($html = true) {
+		Archive_Control::archive_control_the_archive_bottom_content($html);
+    }
+}
+
+if ( ! function_exists( 'archive_bottom_content' ) )
+{
+    function archive_bottom_content($html = true, $post_type = null) {
+		Archive_Control::archive_control_archive_bottom_content($html, $post_type);
+    }
+}
+
+if ( ! function_exists( 'get_archive_bottom_content' ) )
+{
+    function get_archive_bottom_content($post_type = null) {
+		return Archive_Control::archive_control_get_archive_bottom_content($post_type);
+    }
+}
+
+if ( ! function_exists( 'get_archive_thumbnail_id' ) )
+{
     function get_archive_thumbnail_id($post_type = null) {
-		Archive_Control::archive_control_get_archive_thumbnail_id($post_type);
+		return Archive_Control::archive_control_get_archive_thumbnail_id($post_type);
     }
 }
 
-if ( ! function_exists( 'get_archive_thumbnail_src' ) ) {
+if ( ! function_exists( 'get_archive_thumbnail_src' ) )
+{
     function get_archive_thumbnail_src($size = null, $post_type = null) {
-		Archive_Control::archive_control_get_archive_thumbnail_src($size, $post_type);
+		return Archive_Control::archive_control_get_archive_thumbnail_src($size, $post_type);
     }
 }
 
-if ( ! function_exists( 'the_archive_thumbnail' ) ) {
+if ( ! function_exists( 'the_archive_thumbnail' ) )
+{
     function the_archive_thumbnail($size = null, $post_type = null) {
 		Archive_Control::archive_control_the_archive_thumbnail($size, $post_type);
     }
