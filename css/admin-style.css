@@ -22,6 +22,9 @@
 #archive-control-options select {
 	width:30%;
 }
+#archive-control-view-archive {
+	float:left;
+}
 .archive-control-info {
 	color:#999;
 	font-style: italic;

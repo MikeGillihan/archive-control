@@ -4,7 +4,7 @@ Donate link: http://switchthemes.com/archive-control/
 Tags:  archive, archive page, archive template, custom post type, post type, featured image, post types, title, order, pagination
 Requires at least: 4.1
 Tested up to: 4.6.1
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -96,10 +96,13 @@ An archive page is really just WordPress terminology for a page with a list of m
 
 == Changelog ==
 
-= 1.1 =
+= 1.1.1 =
+* Added a "View Archive Page" link to the edit page
+* Added a "Edit Archive Page" link to the admin menu when viewing archive
+= 1.1.0 =
 * Added Archive Featured Image functionality
 * Allowed more customization with functions for developers
-= 1.0 =
+= 1.0.0 =
 * Initial Version
 
 == Upgrade Notice ==
