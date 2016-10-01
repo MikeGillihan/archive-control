@@ -8,7 +8,7 @@ Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Add a featured image as well as editable content above and below custom post type archive pages, in addition to the ability to modify titles, order and pagination.
+Quickly customize your custom post type archives with a separate headline, featured image, and editable content. Modify order and pagination.
 
 == Description ==
 
@@ -79,9 +79,10 @@ This cannot be done through the interface (it shows the "large" size by default)
 = What is a custom post type and how would I make one? =
 
 A custom post type allows you to make the content adding/editing process more specific for different kinds of content. By default it works similarly to a "Post", but can be modified to have different settings and even unique custom fields. To create one you could do it several ways:
-    * Read about it on the Codex: https://codex.wordpress.org/Post_Types
-    * Use a plugin to create them: https://wordpress.org/plugins/custom-post-type-ui/
-    * Use a generator website to create them: https://generatewp.com/post-type/
+
+* Read about it on the Codex: https://codex.wordpress.org/Post_Types
+* Use a plugin to create them: https://wordpress.org/plugins/custom-post-type-ui/
+* Use a generator website to create them: https://generatewp.com/post-type/
 
 = What is an archive page? =
 
@@ -92,7 +93,7 @@ An archive page is really just WordPress terminology for a page with a list of m
 
 1. An example of a custom post type archive page.
 2. Settings for each custom post type that has an archive.
-3. Give your client the ability to edit archive headlines and content before and after the loop.
+3. Give your client the ability to edit archive headlines, a featured image, and content before and after the list.
 
 == Changelog ==
 
@@ -107,10 +108,13 @@ An archive page is really just WordPress terminology for a page with a list of m
 
 == Upgrade Notice ==
 
-= 1.1 =
+= 1.1.1 =
+Added View and Edit buttons where they would be helpful
+
+= 1.1.0 =
 Added Archive Featured Image functionality and functions for developers
 
-= 1.0 =
+= 1.0.0 =
 Initial Version
 
 == Functions Provided by the Plugin ==
