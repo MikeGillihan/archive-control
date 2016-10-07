@@ -272,7 +272,7 @@ class Archive_Control {
 	 * @since    1.1.1
 	 */
 	public function archive_control_archive_edit_link($wp_admin_bar) {
-		if (is_post_type_archive()) {
+		if (is_post_type_archive() && !is_admin()) {
 			$post_type = get_query_var('post_type', null);
 			$options = get_option('archive_control_cpt_' . $post_type . '_options');
 			$edit_url = get_admin_url() . 'edit.php?post_type=' . $post_type . '&page=edit-archive-' . $post_type;
@@ -340,8 +340,8 @@ class Archive_Control {
 				$image_val = isset($options['image']) ? $options['image'] : null;
 				$before_val = isset($options['before']) ? $options['before'] : null;
 				$after_val = isset($options['after']) ? $options['after'] : null;
-				$term_options_val = isset($options['term_options']) ? $options['term_options'] : null;
-				if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_options_val == 'enabled') {
+				$term_order_pagination_val = isset($options['term_order_pagination']) ? $options['term_order_pagination'] : null;
+				if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_order_pagination_val == 'enabled') {
 					//add_action( $taxonomy->name . '_add_form_fields', array( $this, 'archive_control_add_taxonomy_fields'), 10, 2 );
 					add_action( $taxonomy->name . '_edit_form_fields', array( $this, 'archive_control_edit_taxonomy_fields'), 10, 2 );
 					add_action( 'edited_' . $taxonomy->name, array( $this, 'archive_control_edit_taxonomy_meta'), 10, 2 );
@@ -353,8 +353,8 @@ class Archive_Control {
 		$image_val = isset($options['image']) ? $options['image'] : null;
 		$before_val = isset($options['before']) ? $options['before'] : null;
 		$after_val = isset($options['after']) ? $options['after'] : null;
-		$term_options_val = isset($options['term_options']) ? $options['term_options'] : null;
-		if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_options_val == 'enabled') {
+		$term_order_pagination_val = isset($options['term_order_pagination']) ? $options['term_order_pagination'] : null;
+		if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_order_pagination_val == 'enabled') {
 			add_action( 'category_edit_form_fields', array( $this, 'archive_control_edit_taxonomy_fields'), 10, 2 );
 			add_action( 'edited_category', array( $this, 'archive_control_edit_taxonomy_meta'), 10, 2 );
 		}
@@ -363,8 +363,8 @@ class Archive_Control {
 		$image_val = isset($options['image']) ? $options['image'] : null;
 		$before_val = isset($options['before']) ? $options['before'] : null;
 		$after_val = isset($options['after']) ? $options['after'] : null;
-		$term_options_val = isset($options['term_options']) ? $options['term_options'] : null;
-		if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_options_val == 'enabled') {
+		$term_order_pagination_val = isset($options['term_order_pagination']) ? $options['term_order_pagination'] : null;
+		if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_order_pagination_val == 'enabled') {
 			add_action( 'post_tag_edit_form_fields', array( $this, 'archive_control_edit_taxonomy_fields'), 10, 2 );
 			add_action( 'edited_post_tag', array( $this, 'archive_control_edit_taxonomy_meta'), 10, 2 );
 		}
@@ -420,6 +420,14 @@ class Archive_Control {
 	public function archive_control_edit_taxonomy_fields($term, $taxonomy) {
 		$options = get_option('archive_control_tax_' . $taxonomy . '_options');
 		if ($options) {
+			$hide_parent_val = isset($options['hide_parent']) ? $options['hide_parent'] : null;
+			if ($hide_parent_val == 'hidden') {
+				?><style>.term-parent-wrap {display:none;}</style><?php
+			}
+			$hide_description_val = isset($options['hide_description']) ? $options['hide_description'] : null;
+			if ($hide_description_val == 'hidden') {
+				?><style>.term-description-wrap {display:none;}</style><?php
+			}
 			$image_val = isset($options['image']) ? $options['image'] : null;
 			if ($image_val == 'enabled') {
 				?><tr class="form-field term-group-wrap">
@@ -480,8 +488,8 @@ class Archive_Control {
 				</td>
 		    </tr><?php
 			}
-			$term_options_val = isset($options['term_options']) ? $options['term_options'] : null;
-			if ($term_options_val == 'enabled' && current_user_can('administrator')) {
+			$term_order_pagination_val = isset($options['term_order_pagination']) ? $options['term_order_pagination'] : null;
+			if ($term_order_pagination_val == 'enabled' && current_user_can('administrator')) {
 				$archive_control_term_meta = get_term_meta( $term->term_id, 'archive_control_term_meta', true );
 				$this->archive_control_add_field_orderby(
 					$archive_control_term_meta,
@@ -809,17 +817,15 @@ class Archive_Control {
 	 * @since    1.3.0
 	 */
 	public function archive_control_add_field_term_options($options, $name) {
-		$term_options_val = isset($options['term_options']) ? $options['term_options'] : null;
+		$term_order_pagination_val = isset($options['term_order_pagination']) ? $options['term_order_pagination'] : null;
+		$hide_parent_val = isset($options['hide_parent']) ? $options['hide_parent'] : null;
+		$hide_description_val = isset($options['hide_description']) ? $options['hide_description'] : null;
 		?><tr valign="top">
-			<th scope="row"><label><?php _e('Term Edit Options ', 'archive-control'); ?></label></th>
+			<th scope="row"><label><?php _e('Term Edit Options', 'archive-control'); ?></label></th>
 			<td>
-				<!-- <select class="archive-control-term-options" name="<?php echo esc_attr($name); ?>[term_options]">
-					<option value="default"<?php if ($term_options_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Disabled', 'archive-control'); ?></option>
-					<option value="enabled"<?php if ($term_options_val == 'enabled') { echo "selected='selected'"; } ?>><?php _e('Enabled', 'archive-control'); ?></option>
-				</select> -->
-				<label><input type="checkbox" id="cbox1" value="first_checkbox"> Per Term Order & Pagination (Admins Only)</label> <label><input type="checkbox" id="cbox1" value="first_checkbox"> Hide Parent Field</label> <label><input type="checkbox" id="cbox1" value="first_checkbox"> Hide Description Field</label>
-
-				<div class="archive-control-info archive-control-term-options-message"<?php if ($term_options_val !== 'enabled') { echo " style='display:none;'"; } ?>><?php _e('Admins can customize the Order By, Order, and Pagination settings for each term, found in the edit term screen.', 'archive-control'); ?></div>
+				<label class="checkbox-label"><input type="checkbox" name="<?php echo esc_attr($name); ?>[term_order_pagination]" value="enabled"<?php if ($term_order_pagination_val == 'enabled') { echo "checked='checked'"; } ?>> <?php _e('Per Term Order & Pagination', 'archive-control'); ?></label>
+				<label class="checkbox-label"><input type="checkbox" name="<?php echo esc_attr($name); ?>[hide_parent]" value="hidden"<?php if ($hide_parent_val == 'hidden') { echo "checked='checked'"; } ?>> <?php _e('Hide Parent Field', 'archive-control'); ?></label>
+				<label class="checkbox-label"><input type="checkbox" name="<?php echo esc_attr($name); ?>[hide_description]" value="hidden"<?php if ($hide_parent_val == 'hidden') { echo "checked='checked'"; } ?>> <?php _e('Hide Description Field', 'archive-control'); ?></label>
 			</td>
 		</tr><?php
 	}
@@ -1180,9 +1186,8 @@ class Archive_Control {
 						} //has pagination value
 					} //has options
 				} // is_post_type_artchive
-				if (is_tax()) {
+				if (is_tax() || is_category() || is_tag()) {
 					$taxonomy = $query->tax_query->queries[0]['taxonomy'];
-					//$term = $query->tax_query->queries[0]['terms'][0]; //not needed?
 					$options = get_option('archive_control_tax_' . $taxonomy . '_options');
 					if ($options) {
 						$order_val = isset($options['order']) ? $options['order'] : null;
@@ -1209,7 +1214,36 @@ class Archive_Control {
 								$query->set( 'posts_per_page', -1 );
 							}
 						} //has pagination value
-					} //has options
+					} //if options
+					$term_slug = $query->tax_query->queries[0]['terms'][0];
+					$term = get_term_by( 'slug', $term_slug, $taxonomy );
+					$term_options = get_term_meta( $term->term_id, 'archive_control_term_meta', true );
+					if ($term_options) {
+						$order_val = isset($term_options['order']) ? $term_options['order'] : null;
+						if ($order_val !== 'default' && $order_val !== null) {
+							$query->set( 'order', $term_options['order'] );
+						} //has order value
+						$orderby_val = isset($term_options['orderby']) ? $term_options['orderby'] : null;
+						if ($orderby_val !== 'default' && $orderby_val !== null) {
+							$query->set( 'orderby', $term_options['orderby'] );
+							if ($term_options['orderby'] == 'meta_value' || $term_options['orderby'] == 'meta_value_num') {
+								if ($term_options['meta_key'] !== null) {
+									$query->set( 'meta_key', $term_options['meta_key'] );
+								} //has meta_key value
+							} //meta_key value is needed
+						} //has orderby value
+						$pagination_val = isset($term_options['pagination']) ? $term_options['pagination'] : null;
+						if ($pagination_val !== 'default' && $pagination_val !== null) {
+							if ($term_options['pagination'] == 'custom') {
+								if ($term_options['posts_per_page'] !== null) {
+									$query->set( 'posts_per_page', $term_options['posts_per_page'] );
+								}
+							}
+							if ($options['pagination'] == 'none') {
+								$query->set( 'posts_per_page', -1 );
+							}
+						} //has pagination value
+					}//has term options
 				} // is_tax
 			} //is_main_query
 		} //is not admin
@@ -1517,6 +1551,22 @@ class Archive_Control {
 				}
 			} //has options
 		} //is_tax
+		if (is_category()) {
+			$options = get_option('archive_control_tax_category_options');
+			if ($options) {
+				if ($options['title'] == 'no-labels') {
+					$title = single_term_title( '', false );
+				}
+			} //has options
+		} //is_category
+		if (is_tag()) {
+			$options = get_option('archive_control_tax_post_tag_options');
+			if ($options) {
+				if ($options['title'] == 'no-labels') {
+					$title = single_term_title( '', false );
+				}
+			} //has options
+		} //is_tag
 		return $title;
 	}
 

@@ -147,15 +147,6 @@
         }
     });
 
-    $('.archive-control-term-options').change(function() {
-        var value = $(this).val();
-        if (value == 'enabled') {
-            $(this).parent().find('.archive-control-term-options-message').show();
-        } else {
-            $(this).parent().find('.archive-control-term-options-message').hide();
-        }
-    });
-
     $("#buy-coffee-button").click( function() {
         $("#paypal-form").submit();
         e.preventDefault();
