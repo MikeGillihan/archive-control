@@ -4,7 +4,7 @@ Donate link: http://switchthemes.com/archive-control/
 Tags:  archive, archive page, archive template, custom post type, post type, featured image, post types, title, order, pagination
 Requires at least: 4.1
 Tested up to: 4.6.1
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -97,6 +97,8 @@ An archive page is really just WordPress terminology for a page with a list of m
 
 == Changelog ==
 
+= 1.2.1 =
+* SVN issue fix
 = 1.2.0 =
 * Fixed a bug that wouldn't allow archive featured image functionality unless content before or after was also enabled.
 * Introduced basic Taxonomy archive modifications
@@ -111,6 +113,9 @@ An archive page is really just WordPress terminology for a page with a list of m
 * Initial Version
 
 == Upgrade Notice ==
+
+= 1.2.1 =
+SVN issue fix
 
 = 1.2.0 =
 Fixed a few bugs and introduced basic taxonomy archive modifications
