@@ -1,3 +1,14 @@
+<div id="submitdiv" class="postbox">
+    <h2 class="hndle"><span><?php _e('Publish', 'archive-control'); ?></span></h2>
+    <div class="inside">
+        <div id="major-publishing-actions">
+            <div id="publishing-action">
+                <?php submit_button('Save Settings'); ?>
+            </div><!-- #publishing-action -->
+            <div class="clear"></div>
+        </div><!-- #major-publishing-actions -->
+    </div><!-- .inside -->
+</div><!-- #submitdiv -->
 <div id="other-plugins" class="postbox">
     <div class="inside">
         <p>

@@ -73,6 +73,7 @@ class Archive_Control {
 		add_action( 'loop_end', array( $this, 'archive_control_loop_end_content' ) );
 		add_action( 'admin_menu', array( $this, 'archive_control_menu' ) );
 		add_action( 'admin_init', array( $this, 'archive_control_settings' ) );
+		add_action( 'init', array( $this, 'archive_control_handle_taxonomy_fields' ) );
 		add_action( 'init', array( $this, 'archive_control_handle_updates' ), 999 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'archive_control_custom_admin_style_scripts' ) );
 		add_filter( 'get_the_archive_title', array( $this, 'archive_control_title_filter') );
@@ -154,21 +155,28 @@ class Archive_Control {
 	 */
 	public function archive_control_custom_admin_style_scripts()
 	{
+		$load_archive_control_scripts = false;
 		if (isset($_GET['page'])) {
 			if ($_GET['page'] == 'archive-control' || strpos($_GET['page'], 'edit-archive-') !== false) {
-				if ( ! did_action( 'wp_enqueue_media' ) ) {
-					wp_enqueue_media();
-				}
-				wp_register_style( 'archive_control_admin_css', plugin_dir_url( __FILE__ ) . '/css/admin-style.css', false, self::VERSION );
-				wp_enqueue_style( 'archive_control_admin_css' );
-				wp_register_script( 'archive_control_admin_js', plugin_dir_url( __FILE__ ) . '/js/admin-scripts.js', 'jquery', self::VERSION, true );
-				$js_translations = array(
-					'media_upload_title_text' => __( 'Archive Featured Image', 'archive-control' ),
-					'media_upload_button_text' => __( 'Set featured image', 'archive-control' )
-				);
-				wp_localize_script( 'archive_control_admin_js', 'archive_control', $js_translations );
-				wp_enqueue_script( 'archive_control_admin_js' );
+				$load_archive_control_scripts = true;
 			}
+		}
+		if (isset($_GET['taxonomy'])) {
+			$load_archive_control_scripts = true;
+		}
+		if ($load_archive_control_scripts == true) {
+			if ( ! did_action( 'wp_enqueue_media' ) ) {
+				wp_enqueue_media();
+			}
+			wp_register_style( 'archive_control_admin_css', plugin_dir_url( __FILE__ ) . '/css/admin-style.css', false, self::VERSION );
+			wp_enqueue_style( 'archive_control_admin_css' );
+			wp_register_script( 'archive_control_admin_js', plugin_dir_url( __FILE__ ) . '/js/admin-scripts.js', 'jquery', self::VERSION, true );
+			$js_translations = array(
+				'media_upload_title_text' => __( 'Archive Featured Image', 'archive-control' ),
+				'media_upload_button_text' => __( 'Set featured image', 'archive-control' )
+			);
+			wp_localize_script( 'archive_control_admin_js', 'archive_control', $js_translations );
+			wp_enqueue_script( 'archive_control_admin_js' );
 		}
 	}
 
@@ -186,44 +194,6 @@ class Archive_Control {
 		);
 		return array_merge( $links, $mylinks );
 	}
-
-	/**
-	 * Get only the custom post types that we want
-	 *
-	 * @since    1.2.0
-	 */
-	public function archive_control_get_cpts()
-	{
-		$custom_post_types = array();
-		$args = array(
-			'public'   => true,
-			'_builtin' => false
-		);
-		$post_types = get_post_types($args, 'objects' );
-		foreach ($post_types as $post_type ) {
-			if($post_type->has_archive) {
-				$custom_post_types[$post_type->name] = $post_type;
-			}
-		}
-		return $custom_post_types;
-	}
-
-	/**
-	 * Get only the custom post types that we want
-	 *
-	 * @since    1.2.0
-	 */
-	public function archive_control_get_taxes()
-	{
-		$custom_taxonomies = array();
-		$args = array(
-			'public'   => true,
-  			'_builtin' => false
-		);
-		$custom_taxonomies = get_taxonomies($args, 'objects' );
-		return $custom_taxonomies;
-	}
-
 
 	/**
 	 * Activate the settings screens for the plugin
@@ -275,6 +245,8 @@ class Archive_Control {
 	 */
 	public function archive_control_settings()
 	{
+		register_setting( 'archive-control-tax-options-group', 'archive_control_tax_category_options' );
+		register_setting( 'archive-control-tax-options-group', 'archive_control_tax_post_tag_options' );
 		$custom_post_types = $this->archive_control_get_cpts();
 		if (!empty($custom_post_types)) {
 			foreach($custom_post_types as $post_type) {
@@ -290,10 +262,6 @@ class Archive_Control {
 		if (!empty($custom_taxonomies)) {
 			foreach($custom_taxonomies as $taxonomy) {
 				register_setting( 'archive-control-tax-options-group', 'archive_control_tax_' . $taxonomy->name . '_options' );
-				// register_setting( 'archive-control-' . $post_type->name . '-group', 'archive_control_' . $post_type->name . '_image' );
-				// register_setting( 'archive-control-' . $post_type->name . '-group', 'archive_control_' . $post_type->name . '_before' );
-				// register_setting( 'archive-control-' . $post_type->name . '-group', 'archive_control_' . $post_type->name . '_after' );
-
 			}
 		}
 	}
@@ -318,6 +286,218 @@ class Archive_Control {
 					)
 			);
 			$wp_admin_bar->add_node($args);
+		}
+	}
+
+	/**
+	 * Get only the custom post types that we want
+	 *
+	 * @since    1.2.0
+	 */
+	public function archive_control_get_cpts()
+	{
+		$custom_post_types = array();
+		$args = array(
+			'public'   => true,
+			'_builtin' => false
+		);
+		$post_types = get_post_types($args, 'objects' );
+		foreach ($post_types as $post_type ) {
+			if($post_type->has_archive) {
+				$custom_post_types[$post_type->name] = $post_type;
+			}
+		}
+		return $custom_post_types;
+	}
+
+	/**
+	 * Get only the custom post types that we want
+	 *
+	 * @since    1.2.0
+	 */
+	public function archive_control_get_taxes()
+	{
+		$custom_taxonomies = array();
+		$args = array(
+			'public'   => true,
+  			'_builtin' => false
+		);
+		$custom_taxonomies = get_taxonomies($args, 'objects' );
+		return $custom_taxonomies;
+	}
+
+	/**
+	 * Add actions for each custom taxonomy
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_handle_taxonomy_fields()
+	{
+		$custom_taxonomies = $this->archive_control_get_taxes();
+		if (!empty($custom_taxonomies)) {
+			foreach($custom_taxonomies as $taxonomy) {
+				$options = get_option('archive_control_tax_' . $taxonomy->name . '_options');
+				$image_val = isset($options['image']) ? $options['image'] : null;
+				$before_val = isset($options['before']) ? $options['before'] : null;
+				$after_val = isset($options['after']) ? $options['after'] : null;
+				$term_options_val = isset($options['term_options']) ? $options['term_options'] : null;
+				if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_options_val == 'enabled') {
+					//add_action( $taxonomy->name . '_add_form_fields', array( $this, 'archive_control_add_taxonomy_fields'), 10, 2 );
+					add_action( $taxonomy->name . '_edit_form_fields', array( $this, 'archive_control_edit_taxonomy_fields'), 10, 2 );
+					add_action( 'edited_' . $taxonomy->name, array( $this, 'archive_control_edit_taxonomy_meta'), 10, 2 );
+				}
+			}
+		}
+		//For categories
+		$options = get_option('archive_control_tax_category_options');
+		$image_val = isset($options['image']) ? $options['image'] : null;
+		$before_val = isset($options['before']) ? $options['before'] : null;
+		$after_val = isset($options['after']) ? $options['after'] : null;
+		$term_options_val = isset($options['term_options']) ? $options['term_options'] : null;
+		if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_options_val == 'enabled') {
+			add_action( 'category_edit_form_fields', array( $this, 'archive_control_edit_taxonomy_fields'), 10, 2 );
+			add_action( 'edited_category', array( $this, 'archive_control_edit_taxonomy_meta'), 10, 2 );
+		}
+		//For tags
+		$options = get_option('archive_control_tax_post_tag_options');
+		$image_val = isset($options['image']) ? $options['image'] : null;
+		$before_val = isset($options['before']) ? $options['before'] : null;
+		$after_val = isset($options['after']) ? $options['after'] : null;
+		$term_options_val = isset($options['term_options']) ? $options['term_options'] : null;
+		if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_options_val == 'enabled') {
+			add_action( 'post_tag_edit_form_fields', array( $this, 'archive_control_edit_taxonomy_fields'), 10, 2 );
+			add_action( 'edited_post_tag', array( $this, 'archive_control_edit_taxonomy_meta'), 10, 2 );
+		}
+	}
+
+	/**
+	 * Add term meta when a term is saved
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_edit_taxonomy_meta( $term_id, $tt_id ){
+		if( isset( $_POST['archive_control_term_meta']['image'] ) && $_POST['archive_control_term_meta']['image'] !==  '' ){
+			if (is_numeric($_POST['archive_control_term_meta']['image']) && is_object( get_post( $_POST['archive_control_term_meta']['image'] ))) {
+				$archive_control_term_image = $_POST['archive_control_term_meta']['image'];
+		        update_term_meta( $term_id, 'archive_control_term_image', $archive_control_term_image );
+			}
+	    }
+		if( isset( $_POST['archive_control_term_meta']['before'] ) && $_POST['archive_control_term_meta']['before'] !==  '' ){
+	        $archive_control_term_before = wp_kses_post( $_POST['archive_control_term_meta']['before'] );
+	        update_term_meta( $term_id, 'archive_control_term_before', $archive_control_term_before );
+	    }
+		if( isset( $_POST['archive_control_term_meta']['after'] ) && $_POST['archive_control_term_meta']['after'] !==  '' ){
+	        $archive_control_term_after = wp_kses_post( $_POST['archive_control_term_meta']['after'] );
+	        update_term_meta( $term_id, 'archive_control_term_after', $archive_control_term_after );
+	    }
+
+		$archive_control_term_meta = array();
+		if( isset( $_POST['archive_control_term_meta']['orderby'] ) && $_POST['archive_control_term_meta']['orderby'] !==  '' ){
+	        $archive_control_term_meta['orderby'] = sanitize_text_field( $_POST['archive_control_term_meta']['orderby'] );
+	    }
+		if( isset( $_POST['archive_control_term_meta']['meta_key'] ) && $_POST['archive_control_term_meta']['meta_key'] !==  '' ){
+	        $archive_control_term_meta['meta_key'] = sanitize_text_field( $_POST['archive_control_term_meta']['meta_key'] );
+	    }
+		if( isset( $_POST['archive_control_term_meta']['order'] ) && $_POST['archive_control_term_meta']['order'] !==  '' ){
+	        $archive_control_term_meta['order'] = sanitize_text_field( $_POST['archive_control_term_meta']['order'] );
+	    }
+		if( isset( $_POST['archive_control_term_meta']['pagination'] ) && $_POST['archive_control_term_meta']['pagination'] !==  '' ){
+	        $archive_control_term_meta['pagination'] = sanitize_text_field( $_POST['archive_control_term_meta']['pagination'] );
+	    }
+		if( isset( $_POST['archive_control_term_meta']['posts_per_page'] ) && $_POST['archive_control_term_meta']['posts_per_page'] !==  '' ){
+	        $archive_control_term_meta['posts_per_page'] = sanitize_text_field( $_POST['archive_control_term_meta']['posts_per_page'] );
+	    }
+		if (!empty($archive_control_term_meta)) {
+			update_term_meta( $term_id, 'archive_control_term_meta', $archive_control_term_meta );
+		}
+	}
+
+	/**
+	 * Add custom fields to the edit taxonomy screen
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_edit_taxonomy_fields($term, $taxonomy) {
+		$options = get_option('archive_control_tax_' . $taxonomy . '_options');
+		if ($options) {
+			$image_val = isset($options['image']) ? $options['image'] : null;
+			if ($image_val == 'enabled') {
+				?><tr class="form-field term-group-wrap">
+		        <th scope="row"><label for="feature-group"><?php _e( 'Featured Image', 'archive-control' ); ?></label></th>
+		        <td id="featured-image-archive">
+					<div class="taxonomy-image-area">
+						<?php
+						$upload_link = esc_url( get_upload_iframe_src( 'image' ) );
+						$archive_control_term_image = get_term_meta( $term->term_id, 'archive_control_term_image', true );
+						$featured_img_src = wp_get_attachment_image_src( $archive_control_term_image, 'full' );
+						$featured_img = is_array( $featured_img_src );
+						?>
+						<div class="featured-image-archive-container taxonomy-width">
+							<?php if ( $featured_img ) : ?>
+								<img src="<?php echo $featured_img_src[0] ?>" alt="" style="max-width:100%;" />
+							<?php endif; ?>
+						</div>
+						<p class="hide-if-no-js">
+							<a class="upload-featured-image-archive-img <?php if ( $featured_img  ) { echo 'hidden'; } ?>"
+							   href="<?php echo $upload_link ?>">
+								<?php _e('Set featured image', 'archive-control') ?>
+							</a>
+							<a class="delete-featured-image-archive-img <?php if ( ! $featured_img  ) { echo 'hidden'; } ?>"
+							  href="#">
+								<?php _e('Remove featured image', 'archive-control') ?>
+							</a>
+						</p>
+						<input class="featured-image-id" name="archive_control_term_meta[image]" type="hidden" value="<?php echo esc_attr( $archive_control_term_image ); ?>" />
+					</div>
+				</td>
+		    </tr><?php
+			}
+			$before_val = isset($options['before']) ? $options['before'] : null;
+			if ($before_val == 'textarea') {
+				$archive_control_term_before = get_term_meta( $term->term_id, 'archive_control_term_before', true );
+				?><tr class="form-field term-group-wrap">
+		        <th scope="row"><label for="feature-group"><?php _e( 'Before Archive List', 'archive-control' ); ?></label></th>
+		        <td>
+					<?php $settings = array(
+						'textarea_name' => 'archive_control_term_meta[before]',
+						'textarea_rows' => 10
+					);?>
+					<?php wp_editor( $archive_control_term_before, 'before-archive', $settings ); ?>
+				</td>
+		    </tr><?php
+			}
+			$after_val = isset($options['after']) ? $options['after'] : null;
+			if ($after_val == 'textarea') {
+				$archive_control_term_after = get_term_meta( $term->term_id, 'archive_control_term_after', true );
+				?><tr class="form-field term-group-wrap">
+		        <th scope="row"><label for="feature-group"><?php _e( 'After Archive List', 'archive-control' ); ?></label></th>
+		        <td>
+					<?php $settings = array(
+						'textarea_name' => 'archive_control_term_meta[after]',
+						'textarea_rows' => 10
+					);?>
+					<?php wp_editor( $archive_control_term_after, 'after-archive', $settings ); ?>
+				</td>
+		    </tr><?php
+			}
+			$term_options_val = isset($options['term_options']) ? $options['term_options'] : null;
+			if ($term_options_val == 'enabled' && current_user_can('administrator')) {
+				$archive_control_term_meta = get_term_meta( $term->term_id, 'archive_control_term_meta', true );
+				$this->archive_control_add_field_orderby(
+					$archive_control_term_meta,
+					'archive_control_term_meta'
+				);
+
+				$this->archive_control_add_field_order(
+					$archive_control_term_meta,
+					'archive_control_term_meta'
+				);
+
+				$this->archive_control_add_field_pagination(
+					$archive_control_term_meta,
+					'archive_control_term_meta'
+				);
+			}
 		}
 	}
 
@@ -405,7 +585,7 @@ class Archive_Control {
 							<?php endif; ?>
 							<?php if ($current_post_type_options['before'] == 'textarea') : ?>
 								<div id="archive-control-before">
-									<h2><span><?php _e('Before Archive Loop', 'archive-control'); ?></span></h2>
+									<h2><span><?php _e('Before Archive List', 'archive-control'); ?></span></h2>
 									<div class="inside">
 										<?php $settings = array(
 											'textarea_name' => 'archive_control_cpt_' . $current_post_type . '_before',
@@ -417,7 +597,7 @@ class Archive_Control {
 							<?php endif; ?>
 							<?php if ($current_post_type_options['after'] == 'textarea') : ?>
 								<div id="archive-control-after">
-									<h2><span><?php _e('After Archive Loop', 'archive-control'); ?></span></h2>
+									<h2><span><?php _e('After Archive List', 'archive-control'); ?></span></h2>
 									<div class="inside">
 										<?php $settings = array(
 											'textarea_name' => 'archive_control_cpt_' . $current_post_type . '_after',
@@ -437,7 +617,215 @@ class Archive_Control {
 	}
 
 	/**
-	 * The primary settings screen for the plugin
+	 * Add field for archive title options
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_add_field_titles($options, $name, $label, $remove_label ,$allow_custom = false) {
+		$title_val = isset($options['title']) ? $options['title'] : null;
+		?><tr valign="top">
+			<th scope="row"><label><?php echo $label; ?></label></th>
+			<td>
+				<select class="archive-control-title" name="<?php echo esc_attr($name); ?>[title]">
+					<option value="default"<?php if ($title_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+					<option value="no-labels"<?php if ($title_val == 'no-labels') { echo "selected='selected'"; } ?>><?php echo $remove_label; ?></option>
+					<?php if ($allow_custom == true) { ?><option value="custom"<?php if ($title_val == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Override', 'archive-control'); ?></option><?php } ?>
+				</select>
+				<div class="archive-control-info archive-control-title-message"<?php if ($title_val == 'default' || $title_val == null) { echo " style='display:none;'"; } ?>><?php _e('This requires that your theme use the_archive_title() function.', 'archive-control'); ?></div>
+			</td>
+		</tr><?php
+	}
+
+	/**
+	 * Add field for archive featured image options
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_add_field_image($options, $name) {
+		$image_val = isset($options['image']) ? $options['image'] : null;
+		$image_placement_val = isset($options['image-placement']) ? $options['image-placement'] : null;
+		$image_pages_val = isset($options['image-pages']) ? $options['image-pages'] : null;
+		?><tr valign="top">
+			<th scope="row"><label><?php _e('Featured Image', 'archive-control') ?></label></th>
+			<td>
+				<select class="archive-control-image" name="<?php echo esc_attr($name); ?>[image]">
+					<option value="disabled"<?php if ($image_val == 'disabled') { echo "selected='selected'"; } ?>><?php _e('Disabled', 'archive-control'); ?></option>
+					<option value="enabled"<?php if ($image_val == 'enabled') { echo "selected='selected'"; } ?>><?php _e('Enabled', 'archive-control'); ?></option>
+				</select>
+
+				<select class="archive-control-image-placement" name="<?php echo esc_attr($name); ?>[image-placement]"<?php if ($image_val !== 'enabled') { echo " style='display:none;'"; } ?>>
+					<option value="automatic"<?php if ($image_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic', 'archive-control'); ?></option>
+					<option value="function"<?php if ($image_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function', 'archive-control'); ?></option>
+				</select>
+
+				<select class="archive-control-image-pages" name="<?php echo esc_attr($name); ?>[image-pages]"<?php if ($image_val !== 'enabled') { echo " style='display:none;'"; } ?>>
+					<option value="all-pages"<?php if ($image_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers', 'archive-control'); ?></option>
+					<option value="first"<?php if ($image_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only', 'archive-control'); ?></option>
+				</select>
+
+				<div class="archive-control-info archive-control-image-automatic-message" <?php if ($image_val !== 'enabled' || $image_placement_val !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The image will be automatically added to the archive page before the posts loop.', 'archive-control'); ?><?php if ($image_val == 'enabled') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
+
+				<div class="archive-control-info archive-control-image-manual-message"<?php if ($image_val !== 'enabled' || $image_placement_val !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The image will be added if you place the_archive_thumbnail("large") within your theme files.', 'archive-control'); ?><?php if ($image_val == 'enabled') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
+			</td>
+		</tr><?php
+	}
+
+	/**
+	 * Add field for archive content before options
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_add_field_before($options, $name) {
+		$before_val = isset($options['before']) ? $options['before'] : null;
+		$before_placement_val = isset($options['before-placement']) ? $options['before-placement'] : null;
+		$before_pages_val = isset($options['before-pages']) ? $options['before-pages'] : null;
+		?><tr valign="top">
+			<th scope="row"><label><?php _e('Content Before List', 'archive-control'); ?></label></th>
+			<td>
+				<select class="archive-control-before" name="<?php echo esc_attr($name); ?>[before]">
+					<option value="default"<?php if ($before_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Disabled', 'archive-control'); ?></option>
+					<option value="textarea"<?php if ($before_val == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enabled', 'archive-control'); ?></option>
+				</select>
+				<select class="archive-control-before-placement" name="<?php echo esc_attr($name); ?>[before-placement]"<?php if ($before_val !== 'textarea') { echo " style='display:none;'"; } ?>>
+					<option value="automatic"<?php if ($before_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic', 'archive-control'); ?></option>
+					<option value="function"<?php if ($before_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function', 'archive-control'); ?></option>
+				</select>
+				<select class="archive-control-before-pages" name="<?php echo esc_attr($name); ?>[before-pages]"<?php if ($before_val !== 'textarea') { echo " style='display:none;'"; } ?>>
+					<option value="all-pages"<?php if ($before_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers', 'archive-control'); ?></option>
+					<option value="first"<?php if ($before_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only', 'archive-control'); ?></option>
+				</select>
+				<div class="archive-control-info archive-control-before-automatic-message" <?php if ($before_val !== 'textarea' || $before_placement_val !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The content will be automatically added to the archive page before the posts loop.', 'archive-control'); ?><?php if ($before_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit', 'archive-control'); ?></a><?php } ?></div>
+				<div class="archive-control-info archive-control-before-manual-message"<?php if ($before_val !== 'textarea' || $before_placement_val !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The content will be added if you place the_archive_top_content() within your theme files.', 'archive-control'); ?><?php if ($before_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit', 'archive-control'); ?></a><?php } ?></div>
+			</td>
+		</tr><?php
+	}
+
+	/**
+	 * Add field for archive content after options
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_add_field_after($options, $name) {
+		$after_val = isset($options['after']) ? $options['after'] : null;
+		$after_placement_val = isset($options['after-placement']) ? $options['after-placement'] : null;
+		$after_pages_val = isset($options['after-pages']) ? $options['after-pages'] : null;
+		?><tr valign="top">
+			<th scope="row"><label><?php _e('Content After List', 'archive-control'); ?></label></th>
+			<td>
+				<select class="archive-control-after" name="<?php echo esc_attr($name); ?>[after]">
+					<option value="default"<?php if ($after_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Disabled', 'archive-control'); ?></option>
+					<option value="textarea"<?php if ($after_val == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enabled', 'archive-control'); ?></option>
+				</select>
+				<select class="archive-control-after-placement" name="<?php echo esc_attr($name); ?>[after-placement]"<?php if ($after_val !== 'textarea') { echo " style='display:none;'"; } ?>>
+					<option value="automatic"<?php if ($after_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic', 'archive-control'); ?></option>
+					<option value="function"<?php if ($after_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function', 'archive-control'); ?></option>
+				</select>
+				<select class="archive-control-after-pages" name="<?php echo esc_attr($name); ?>[after-pages]"<?php if ($after_val !== 'textarea') { echo " style='display:none;'"; } ?>>
+					<option value="all-pages"<?php if ($after_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers', 'archive-control'); ?></option>
+					<option value="first"<?php if ($after_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only', 'archive-control'); ?></option>
+				</select>
+				<div class="archive-control-info archive-control-after-automatic-message" <?php if ($after_val !== 'textarea' || $after_placement_val !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The content will be automatically added to the archive page after the posts loop.', 'archive-control'); ?><?php if ($after_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
+				<div class="archive-control-info archive-control-after-manual-message"<?php if ($after_val !== 'textarea' || $after_placement_val !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The content will be added if you place  the_archive_bottom_content() within your theme files.', 'archive-control'); ?><?php if ($after_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
+			</td>
+		</tr><?php
+	}
+
+	/**
+	 * Add field for archive orderby options
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_add_field_orderby($options, $name) {
+		$orderby_val = isset($options['orderby']) ? $options['orderby'] : null;
+		$meta_key_val = isset($options['meta_key']) ? $options['meta_key'] : null;
+		?><tr valign="top">
+			<th scope="row"><?php _e('Order By', 'archive-control'); ?></th>
+			<td>
+				<select class="archive-control-order-by" name="<?php echo esc_attr($name); ?>[orderby]">
+					<option value="default"<?php if ($orderby_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+					<option value="date"<?php if ($orderby_val == 'date') { echo "selected='selected'"; } ?>><?php _e('Date Published', 'archive-control'); ?></option>
+					<option value="title"<?php if ($orderby_val == 'title') { echo "selected='selected'"; } ?>><?php _e('Title', 'archive-control'); ?></option>
+					<option value="modified"<?php if ($orderby_val == 'modified') { echo "selected='selected'"; } ?>><?php _e('Date Modified', 'archive-control'); ?></option>
+					<option value="menu_order"<?php if ($orderby_val == 'menu_order') { echo "selected='selected'"; } ?>><?php _e('Menu Order', 'archive-control'); ?></option>
+					<option value="rand"<?php if ($orderby_val == 'rand') { echo "selected='selected'"; } ?>><?php _e('Random', 'archive-control'); ?></option>
+					<option value="ID"<?php if ($orderby_val == 'ID') { echo "selected='selected'"; } ?>><?php _e('ID', 'archive-control'); ?></option>
+					<option value="author"<?php if ($orderby_val == 'author') { echo "selected='selected'"; } ?>><?php _e('Author', 'archive-control'); ?></option>
+					<option value="name"<?php if ($orderby_val == 'name') { echo "selected='selected'"; } ?>><?php _e('Post Slug', 'archive-control'); ?></option>
+					<option value="type"<?php if ($orderby_val == 'type') { echo "selected='selected'"; } ?>><?php _e('Post Type', 'archive-control'); ?></option>
+					<option value="comment_count"<?php if ($orderby_val == 'comment_count') { echo "selected='selected'"; } ?>><?php _e('Comment Count', 'archive-control'); ?></option>
+					<option value="parent"<?php if ($orderby_val == 'parent') { echo "selected='selected'"; } ?>><?php _e('Parent', 'archive-control'); ?></option>
+					<option value="meta_value"<?php if ($orderby_val == 'meta_value') { echo "selected='selected'"; } ?>><?php _e('Meta Value', 'archive-control'); ?></option>
+					<option value="meta_value_num"<?php if ($orderby_val == 'meta_value_num') { echo "selected='selected'"; } ?>><?php _e('Meta Value (Numeric)', 'archive-control'); ?></option>
+					<option value="none"<?php if ($orderby_val == 'none') { echo "selected='selected'"; } ?>><?php _e('No Order', 'archive-control'); ?></option>
+				</select>
+				<input class="archive-control-meta-key" type="text" name="<?php echo esc_attr($name); ?>[meta_key]" value="<?php echo esc_attr($meta_key_val); ?>" placeholder="<?php _e('Meta Key', 'archive-control'); ?>"<?php if ($orderby_val !== 'meta_value' && $orderby_val !== 'meta_value_num') { echo " style='display:none;'"; } ?>/>
+			</td>
+		</tr><?php
+	}
+
+	/**
+	 * Add field for archive order options
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_add_field_order($options, $name) {
+		$order_val = isset($options['order']) ? $options['order'] : null;
+		?><tr valign="top">
+			<th scope="row"><label><?php _e('Order', 'archive-control'); ?></label></th>
+			<td>
+				<select name="<?php echo esc_attr($name); ?>[order]">
+					<option value="default"<?php if ($order_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+					<option value="asc"<?php if ($order_val == 'asc') { echo "selected='selected'"; } ?>><?php _e('Ascending', 'archive-control'); ?></option>
+					<option value="desc"<?php if ($order_val == 'desc') { echo "selected='selected'"; } ?>><?php _e('Descending', 'archive-control'); ?></option>
+				</select>
+			</td>
+		</tr><?php
+	}
+
+	/**
+	 * Add field for archive pagination options
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_add_field_pagination($options, $name) {
+		$pagination_val = isset($options['pagination']) ? $options['pagination'] : null;
+		$posts_per_page_val = isset($options['posts_per_page']) ? $options['posts_per_page'] : null;
+		?><tr valign="top">
+			<th scope="row"><label><?php _e('Pagination', 'archive-control'); ?></label></th>
+			<td>
+				<select class="archive-control-pagination" name="<?php echo esc_attr($name); ?>[pagination]">
+					<option value="default"<?php if ($pagination_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
+					<option value="none"<?php if ($pagination_val == 'none') { echo "selected='selected'"; } ?>><?php _e('Show Everything', 'archive-control'); ?></option>
+					<option value="custom"<?php if ($pagination_val == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Posts Per Page', 'archive-control'); ?></option>
+				</select>
+				<input class="archive-control-posts-per-page" type="text" name="<?php echo esc_attr($name); ?>[posts_per_page]" value="<?php echo esc_attr($posts_per_page_val); ?>" placeholder="<?php _e('Posts per page', 'archive-control'); ?>"<?php if ($pagination_val !== 'custom') { echo " style='display:none;'"; } ?>/>
+			</td>
+		</tr><?php
+	}
+
+	/**
+	 * Add field for archive order options
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_add_field_term_options($options, $name) {
+		$term_options_val = isset($options['term_options']) ? $options['term_options'] : null;
+		?><tr valign="top">
+			<th scope="row"><label><?php _e('Term Edit Options ', 'archive-control'); ?></label></th>
+			<td>
+				<!-- <select class="archive-control-term-options" name="<?php echo esc_attr($name); ?>[term_options]">
+					<option value="default"<?php if ($term_options_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Disabled', 'archive-control'); ?></option>
+					<option value="enabled"<?php if ($term_options_val == 'enabled') { echo "selected='selected'"; } ?>><?php _e('Enabled', 'archive-control'); ?></option>
+				</select> -->
+				<label><input type="checkbox" id="cbox1" value="first_checkbox"> Per Term Order & Pagination (Admins Only)</label> <label><input type="checkbox" id="cbox1" value="first_checkbox"> Hide Parent Field</label> <label><input type="checkbox" id="cbox1" value="first_checkbox"> Hide Description Field</label>
+
+				<div class="archive-control-info archive-control-term-options-message"<?php if ($term_options_val !== 'enabled') { echo " style='display:none;'"; } ?>><?php _e('Admins can customize the Order By, Order, and Pagination settings for each term, found in the edit term screen.', 'archive-control'); ?></div>
+			</td>
+		</tr><?php
+	}
+
+	/**
+	 * The primary settings screen(s) for the plugin
 	 *
 	 * @since    1.0.0
 	 */
@@ -454,10 +842,29 @@ class Archive_Control {
 				}
 			?>
 			<h2 class="nav-tab-wrapper">
-                <a href="?page=archive-control&tab=post_types" class="nav-tab <?php echo $active_tab == 'post_types' ? 'nav-tab-active' : ''; ?>">Custom Post Types</a>
-                <a href="?page=archive-control&tab=taxonomies" class="nav-tab <?php echo $active_tab == 'taxonomies' ? 'nav-tab-active' : ''; ?>">Custom Taxonomies</a>
+                <a href="?page=archive-control&tab=post_types" class="nav-tab <?php echo $active_tab == 'post_types' ? 'nav-tab-active' : ''; ?>"><?php _e('Post Types'); ?></a>
+                <a href="?page=archive-control&tab=taxonomies" class="nav-tab <?php echo $active_tab == 'taxonomies' ? 'nav-tab-active' : ''; ?>"><?php _e('Taxonomies'); ?></a>
             </h2>
-			<?php if ($active_tab == 'post_types') { ?>
+			<?php if ($active_tab == 'cats_tags') { ?>
+				<p><?php _e('You can select options for all categories or tags here.', 'archive-control'); ?></p>
+				<form method="post" action="options.php">
+					<?php
+						settings_fields( 'archive-control-tax-options-group' );
+						do_settings_sections( 'archive-control-tax-options-group' );
+					?>
+					<div id="poststuff">
+						<div id="post-body" class="metabox-holder columns-2">
+							<div id="postbox-container-1" class="postbox-container">
+								<?php include('admin-sidebar.php' ); ?>
+							</div><!-- .postbox-container -->
+							<div id="postbox-container-2" class="postbox-container">
+
+							</div><!-- .postbox-container -->
+						</div><!-- #post-body -->
+						<br class="clear">
+					</div><!-- #poststuff -->
+				</form>
+			<?php } elseif($active_tab == 'post_types') { ?>
 				<p><?php _e('You can select options for each custom post type. (If you do not see your custom post type in this list, you may need to set "has_archive" to true.)', 'archive-control'); ?></p>
 				<form method="post" action="options.php">
 					<?php
@@ -467,17 +874,6 @@ class Archive_Control {
 					<div id="poststuff">
 						<div id="post-body" class="metabox-holder columns-2">
 							<div id="postbox-container-1" class="postbox-container">
-								<div id="submitdiv" class="postbox">
-									<h2 class="hndle"><span><?php _e('Publish', 'archive-control'); ?></span></h2>
-									<div class="inside">
-										<div id="major-publishing-actions">
-											<div id="publishing-action">
-												<?php submit_button('Save Settings'); ?>
-											</div><!-- #publishing-action -->
-											<div class="clear"></div>
-										</div><!-- #major-publishing-actions -->
-									</div><!-- .inside -->
-								</div><!-- #submitdiv -->
 								<?php include('admin-sidebar.php' ); ?>
 							</div><!-- .postbox-container -->
 							<div id="postbox-container-2" class="postbox-container">
@@ -492,165 +888,49 @@ class Archive_Control {
 											<h2 class="hndle ui-sortable-handle"><span><?php echo $post_type->label; ?></span></h2>
 											<div class="inside">
 												<table class="form-table">
-													<tr valign="top">
-											        	<th scope="row"><label><?php _e('Archive Title', 'archive-control'); ?></label></th>
-												        <td>
-															<?php
-																$title_val = isset($options['title']) ? $options['title'] : null;
-															?>
-															<select class="archive-control-title" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[title]">
-																<option value="default"<?php if ($title_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-																<option value="no-labels"<?php if ($title_val == 'no-labels') { echo "selected='selected'"; } ?>><?php _e('Remove Labels (Archive, Category, Tag, etc.)', 'archive-control'); ?></option>
-																<option value="custom"<?php if ($title_val == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Override', 'archive-control'); ?></option>
-															</select>
 
-															<div class="archive-control-info archive-control-title-message"<?php if ($title_val == 'default' || $title_val == null) { echo " style='display:none;'"; } ?>><?php _e('This requires that your theme use the_archive_title() function.', 'archive-control'); ?><?php if ($title_val == 'custom') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
-														</td>
-													</tr>
-													<tr valign="top">
-											        	<th scope="row"><label><?php _e('Archive Featured Image', 'archive-control'); ?></label></th>
-												        <td>
-															<?php
-																$image_val = isset($options['image']) ? $options['image'] : null;
+													<?php
 
-																$image_placement_val = isset($options['image-placement']) ? $options['image-placement'] : null;
+														$this->archive_control_add_field_titles(
+															$options,
+															'archive_control_cpt_' . $post_type->name . '_options',
+															__('CPT Archive Title', 'archive-control'),
+															__('Remove Label (Archive:)', 'archive-control'),
+															true
+														);
 
-																$image_pages_val = isset($options['image-pages']) ? $options['image-pages'] : null;
-															?>
+														$this->archive_control_add_field_image(
+															$options,
+															'archive_control_cpt_' . $post_type->name . '_options'
+														);
 
-															<select class="archive-control-image" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[image]">
-																<option value="disabled"<?php if ($image_val == 'disabled') { echo "selected='selected'"; } ?>><?php _e('Disabled', 'archive-control'); ?></option>
-																<option value="enabled"<?php if ($image_val == 'enabled') { echo "selected='selected'"; } ?>><?php _e('Enabled', 'archive-control'); ?></option>
-															</select>
+														$this->archive_control_add_field_before(
+															$options,
+															'archive_control_cpt_' . $post_type->name . '_options'
+														);
 
-															<select class="archive-control-image-placement" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[image-placement]"<?php if ($image_val !== 'enabled') { echo " style='display:none;'"; } ?>>
-																<option value="automatic"<?php if ($image_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
-																<option value="function"<?php if ($image_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
-															</select>
+														$this->archive_control_add_field_after(
+															$options,
+															'archive_control_cpt_' . $post_type->name . '_options'
+														);
 
-															<select class="archive-control-image-pages" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[image-pages]"<?php if ($image_val !== 'enabled') { echo " style='display:none;'"; } ?>>
-																<option value="all-pages"<?php if ($image_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
-																<option value="first"<?php if ($image_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
-															</select>
+														$this->archive_control_add_field_orderby(
+															$options,
+															'archive_control_cpt_' . $post_type->name . '_options'
+														);
 
-															<div class="archive-control-info archive-control-image-automatic-message" <?php if ($image_val !== 'enabled' || $image_placement_val !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The image will be automatically added to the archive page before the posts loop.'); ?><?php if ($image_val == 'enabled') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
+														$this->archive_control_add_field_order(
+															$options,
+															'archive_control_cpt_' . $post_type->name . '_options'
+														);
 
-															<div class="archive-control-info archive-control-image-manual-message"<?php if ($image_val !== 'enabled' || $image_placement_val !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The image will be added if you place the_archive_thumbnail("large") within your theme files.'); ?><?php if ($image_val == 'enabled') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
-														</td>
-													</tr>
-													<tr valign="top">
-														<th scope="row"><label><?php _e('Content Before List'); ?></label></th>
-												        <td>
-															<?php
-																$before_val = isset($options['before']) ? $options['before'] : null;
+														$this->archive_control_add_field_pagination(
+															$options,
+															'archive_control_cpt_' . $post_type->name . '_options'
+														);
 
-																$before_placement_val = isset($options['before-placement']) ? $options['before-placement'] : null;
+													?>
 
-																$before_pages_val = isset($options['before-pages']) ? $options['before-pages'] : null;
-															?>
-
-															<select class="archive-control-before" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[before]">
-																<option value="default"<?php if ($before_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-																<option value="textarea"<?php if ($before_val == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enable Textarea'); ?></option>
-															</select>
-
-															<select class="archive-control-before-placement" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[before-placement]"<?php if ($before_val !== 'textarea') { echo " style='display:none;'"; } ?>>
-																<option value="automatic"<?php if ($before_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
-																<option value="function"<?php if ($before_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
-															</select>
-
-															<select class="archive-control-before-pages" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[before-pages]"<?php if ($before_val !== 'textarea') { echo " style='display:none;'"; } ?>>
-																<option value="all-pages"<?php if ($before_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
-																<option value="first"<?php if ($before_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
-															</select>
-
-															<div class="archive-control-info archive-control-before-automatic-message" <?php if ($before_val !== 'textarea' || $before_placement_val !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The content will be automatically added to the archive page before the posts loop.'); ?><?php if ($before_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
-
-															<div class="archive-control-info archive-control-before-manual-message"<?php if ($before_val !== 'textarea' || $before_placement_val !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The content will be added if you place  the_archive_top_content() within your theme files.'); ?><?php if ($before_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
-														</td>
-													</tr>
-													<tr valign="top">
-														<th scope="row"><label><?php _e('Content After List'); ?></label></th>
-												        <td>
-															<?php
-																$after_val = isset($options['after']) ? $options['after'] : null;
-
-																$after_placement_val = isset($options['after-placement']) ? $options['after-placement'] : null;
-
-																$after_pages_val = isset($options['after-pages']) ? $options['after-pages'] : null;
-															?>
-															<select class="archive-control-after" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[after]">
-																<option value="default"<?php if ($after_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-																<option value="textarea"<?php if ($after_val == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enable Textarea'); ?></option>
-															</select>
-															<select class="archive-control-after-placement" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[after-placement]"<?php if ($after_val !== 'textarea') { echo " style='display:none;'"; } ?>>
-																<option value="automatic"<?php if ($after_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
-																<option value="function"<?php if ($after_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
-															</select>
-															<select class="archive-control-after-pages" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[after-pages]"<?php if ($after_val !== 'textarea') { echo " style='display:none;'"; } ?>>
-																<option value="all-pages"<?php if ($after_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
-																<option value="first"<?php if ($after_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
-															</select>
-															<div class="archive-control-info archive-control-after-automatic-message" <?php if ($after_val !== 'textarea' || $after_placement_val !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The content will be automatically added to the archive page after the posts loop.'); ?><?php if ($after_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
-															<div class="archive-control-info archive-control-after-manual-message"<?php if ($after_val !== 'textarea' || $after_placement_val !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The content will be added if you place  the_archive_bottom_content() within your theme files.'); ?><?php if ($after_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
-														</td>
-													</tr>
-													<tr valign="top">
-														<th scope="row"><?php _e('Order By'); ?></th>
-												        <td>
-															<?php
-																$orderby_val = isset($options['orderby']) ? $options['orderby'] : null;
-
-																$meta_key_val = isset($options['meta_key']) ? $options['meta_key'] : null;
-															?>
-															<select class="archive-control-order-by" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[orderby]">
-																<option value="default"<?php if ($orderby_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-																<option value="date"<?php if ($orderby_val == 'date') { echo "selected='selected'"; } ?>><?php _e('Date Published'); ?></option>
-																<option value="title"<?php if ($orderby_val == 'title') { echo "selected='selected'"; } ?>><?php _e('Title'); ?></option>
-																<option value="modified"<?php if ($orderby_val == 'modified') { echo "selected='selected'"; } ?>><?php _e('Date Modified'); ?></option>
-																<option value="menu_order"<?php if ($orderby_val == 'menu_order') { echo "selected='selected'"; } ?>><?php _e('Menu Order'); ?></option>
-																<option value="rand"<?php if ($orderby_val == 'rand') { echo "selected='selected'"; } ?>><?php _e('Random'); ?></option>
-																<option value="ID"<?php if ($orderby_val == 'ID') { echo "selected='selected'"; } ?>><?php _e('ID'); ?></option>
-																<option value="author"<?php if ($orderby_val == 'author') { echo "selected='selected'"; } ?>><?php _e('Author'); ?></option>
-																<option value="name"<?php if ($orderby_val == 'name') { echo "selected='selected'"; } ?>><?php _e('Post Slug'); ?></option>
-																<option value="type"<?php if ($orderby_val == 'type') { echo "selected='selected'"; } ?>><?php _e('Post Type'); ?></option>
-																<option value="comment_count"<?php if ($orderby_val == 'comment_count') { echo "selected='selected'"; } ?>><?php _e('Comment Count'); ?></option>
-																<option value="parent"<?php if ($orderby_val == 'parent') { echo "selected='selected'"; } ?>><?php _e('Parent'); ?></option>
-																<option value="meta_value"<?php if ($orderby_val == 'meta_value') { echo "selected='selected'"; } ?>><?php _e('Meta Value'); ?></option>
-																<option value="meta_value_num"<?php if ($orderby_val == 'meta_value_num') { echo "selected='selected'"; } ?>><?php _e('Meta Value (Numeric)'); ?></option>
-																<option value="none"<?php if ($orderby_val == 'none') { echo "selected='selected'"; } ?>><?php _e('No Order'); ?></option>
-															</select>
-															<input class="archive-control-meta-key" type="text" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[meta_key]" value="<?php echo esc_attr($meta_key_val); ?>" placeholder="<?php _e('Meta Key'); ?>"<?php if ($orderby_val !== 'meta_value' && $orderby_val !== 'meta_value_num') { echo " style='display:none;'"; } ?>/>
-														</td>
-													</tr>
-													<tr valign="top">
-														<th scope="row"><label><?php _e('Order'); ?></label></th>
-												        <td>
-															<?php
-																$order_val = isset($options['order']) ? $options['order'] : null;
-															?>
-															<select name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[order]">
-																<option value="default"<?php if ($order_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-																<option value="asc"<?php if ($order_val == 'asc') { echo "selected='selected'"; } ?>><?php _e('Ascending'); ?></option>
-																<option value="desc"<?php if ($order_val == 'desc') { echo "selected='selected'"; } ?>><?php _e('Descending'); ?></option>
-															</select>
-														</td>
-													</tr>
-													<tr valign="top">
-														<th scope="row"><label><?php _e('Pagination'); ?></label></th>
-												        <td>
-															<?php
-																$pagination_val = isset($options['pagination']) ? $options['pagination'] : null;
-																$posts_per_page_val = isset($options['posts_per_page']) ? $options['posts_per_page'] : null;
-															?>
-															<select class="archive-control-pagination" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[pagination]">
-																<option value="default"<?php if ($pagination_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-																<option value="none"<?php if ($pagination_val == 'none') { echo "selected='selected'"; } ?>><?php _e('Show Everything'); ?></option>
-																<option value="custom"<?php if ($pagination_val == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Posts Per Page'); ?></option>
-															</select>
-															<input class="archive-control-posts-per-page" type="text" name="archive_control_cpt_<?php echo esc_attr($post_type->name); ?>_options[posts_per_page]" value="<?php echo esc_attr($posts_per_page_val); ?>" placeholder="<?php _e('Posts per page'); ?>"<?php if ($pagination_val !== 'custom') { echo " style='display:none;'"; } ?>/>
-														</td>
-											        </tr>
 												</table>
 											</div><!-- .inside -->
 										</div><!-- .postbox -->
@@ -662,7 +942,7 @@ class Archive_Control {
 					</div><!-- #poststuff -->
 				</form>
 			<?php } elseif($active_tab == 'taxonomies') { ?>
-				<p><?php _e('You can select options for each custom taxonomy. These options apply to all of the term archive pages.', 'archive-control'); ?></p>
+				<p><?php _e('You can select options for each taxonomy. These options apply to all of the term archive pages.', 'archive-control'); ?></p>
 				<form method="post" action="options.php">
 					<?php
 						settings_fields( 'archive-control-tax-options-group' );
@@ -671,20 +951,121 @@ class Archive_Control {
 					<div id="poststuff">
 						<div id="post-body" class="metabox-holder columns-2">
 							<div id="postbox-container-1" class="postbox-container">
-								<div id="submitdiv" class="postbox">
-									<h2 class="hndle"><span><?php _e('Publish', 'archive-control'); ?></span></h2>
-									<div class="inside">
-										<div id="major-publishing-actions">
-											<div id="publishing-action">
-												<?php submit_button('Save Settings'); ?>
-											</div><!-- #publishing-action -->
-											<div class="clear"></div>
-										</div><!-- #major-publishing-actions -->
-									</div><!-- .inside -->
-								</div><!-- #submitdiv -->
 								<?php include('admin-sidebar.php' ); ?>
 							</div><!-- .postbox-container -->
 							<div id="postbox-container-2" class="postbox-container">
+								<div class="postbox">
+									<h2 class="hndle ui-sortable-handle"><span><?php _e('Categories'); ?></span></h2>
+									<div class="inside">
+										<table class="form-table">
+
+											<?php
+
+												$options = get_option('archive_control_tax_category_options');
+
+												$this->archive_control_add_field_titles(
+													$options,
+													'archive_control_tax_category_options',
+													__('Category Titles', 'archive-control'),
+													__('Remove Label (Category:)', 'archive-control')
+												);
+
+												$this->archive_control_add_field_image(
+													$options,
+													'archive_control_tax_category_options'
+												);
+
+												$this->archive_control_add_field_before(
+													$options,
+													'archive_control_tax_category_options'
+												);
+
+												$this->archive_control_add_field_after(
+													$options,
+													'archive_control_tax_category_options'
+												);
+
+												$this->archive_control_add_field_orderby(
+													$options,
+													'archive_control_tax_category_options'
+												);
+
+												$this->archive_control_add_field_order(
+													$options,
+													'archive_control_tax_category_options'
+												);
+
+												$this->archive_control_add_field_pagination(
+													$options,
+													'archive_control_tax_category_options'
+												);
+
+												$this->archive_control_add_field_term_options(
+													$options,
+													'archive_control_tax_category_options'
+												);
+
+											?>
+
+										</table>
+									</div><!-- .inside -->
+								</div><!-- .postbox -->
+								<div class="postbox">
+									<h2 class="hndle ui-sortable-handle"><span><?php _e('Tags'); ?></span></h2>
+									<div class="inside">
+										<table class="form-table">
+
+											<?php
+
+												$options = get_option('archive_control_tax_post_tag_options');
+
+												$this->archive_control_add_field_titles(
+													$options,
+													'archive_control_tax_post_tag_options',
+													__('Tag Titles', 'archive-control'),
+													__('Remove Label (Tag:)', 'archive-control')
+												);
+
+												$this->archive_control_add_field_image(
+													$options,
+													'archive_control_tax_post_tag_options'
+												);
+
+												$this->archive_control_add_field_before(
+													$options,
+													'archive_control_tax_post_tag_options'
+												);
+
+												$this->archive_control_add_field_after(
+													$options,
+													'archive_control_tax_post_tag_options'
+												);
+
+												$this->archive_control_add_field_orderby(
+													$options,
+													'archive_control_tax_post_tag_options'
+												);
+
+												$this->archive_control_add_field_order(
+													$options,
+													'archive_control_tax_post_tag_options'
+												);
+
+												$this->archive_control_add_field_pagination(
+													$options,
+													'archive_control_tax_post_tag_options'
+												);
+
+												$this->archive_control_add_field_term_options(
+													$options,
+													'archive_control_tax_post_tag_options'
+												);
+
+											?>
+
+										</table>
+									</div><!-- .inside -->
+								</div><!-- .postbox -->
 								<?php
 								$custom_taxonomies = $this->archive_control_get_taxes();
 								if (!empty($custom_taxonomies)) {
@@ -695,179 +1076,48 @@ class Archive_Control {
 											<h2 class="hndle ui-sortable-handle"><span><?php echo $taxonomy->label; ?></span></h2>
 											<div class="inside">
 												<table class="form-table">
-													<tr valign="top">
-											        	<th scope="row"><label><?php _e('Term Titles', 'archive-control'); ?></label></th>
-												        <td>
-															<?php
-																$title_val = isset($options['title']) ? $options['title'] : null;
-															?>
-															<select class="archive-control-title" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[title]">
-																<option value="default"<?php if ($title_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-																<option value="no-labels"<?php if ($title_val == 'no-labels') { echo "selected='selected'"; } ?>><?php _e('Remove Taxonomy Name', 'archive-control'); ?></option>
-															</select>
 
-															<div class="archive-control-info archive-control-title-message"<?php if ($title_val == 'default' || $title_val == null) { echo " style='display:none;'"; } ?>><?php _e('This requires that your theme use the_archive_title() function.', 'archive-control'); ?></div>
-														</td>
-													</tr>
-													<?php /* <tr valign="top">
-														<th scope="row"><label><?php _e('Term Featured Image', 'archive-control'); ?></label></th>
-														<td>
-															<?php
-																$image_val = isset($options['image']) ? $options['image'] : null;
+													<?php
 
-																$image_placement_val = isset($options['image-placement']) ? $options['image-placement'] : null;
+														$this->archive_control_add_field_titles(
+															$options,
+															'archive_control_tax_' . $taxonomy->name . '_options',
+															__('Term Titles', 'archive-control'),
+															__('Remove Label (Taxonomy:)', 'archive-control')
+														);
 
-																$image_pages_val = isset($options['image-pages']) ? $options['image-pages'] : null;
-															?>
+														$this->archive_control_add_field_image(
+															$options,
+															'archive_control_tax_' . $taxonomy->name . '_options'
+														);
 
-															<select class="archive-control-image" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[image]">
-																<option value="disabled"<?php if ($image_val == 'disabled') { echo "selected='selected'"; } ?>><?php _e('Disabled', 'archive-control'); ?></option>
-																<option value="enabled"<?php if ($image_val == 'enabled') { echo "selected='selected'"; } ?>><?php _e('Enabled', 'archive-control'); ?></option>
-															</select>
+														$this->archive_control_add_field_before(
+															$options,
+															'archive_control_tax_' . $taxonomy->name . '_options'
+														);
 
-															<select class="archive-control-image-placement" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[image-placement]"<?php if ($image_val !== 'enabled') { echo " style='display:none;'"; } ?>>
-																<option value="automatic"<?php if ($image_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
-																<option value="function"<?php if ($image_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
-															</select>
+														$this->archive_control_add_field_after(
+															$options,
+															'archive_control_tax_' . $taxonomy->name . '_options'
+														);
 
-															<select class="archive-control-image-pages" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[image-pages]"<?php if ($image_val !== 'enabled') { echo " style='display:none;'"; } ?>>
-																<option value="all-pages"<?php if ($image_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
-																<option value="first"<?php if ($image_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
-															</select>
+														$this->archive_control_add_field_orderby(
+															$options,
+															'archive_control_tax_' . $taxonomy->name . '_options'
+														);
 
-															<div class="archive-control-info archive-control-image-automatic-message" <?php if ($image_val !== 'enabled' || $image_placement_val !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The image will be automatically added to the archive page before the posts loop.'); ?><?php if ($image_val == 'enabled') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
+														$this->archive_control_add_field_order(
+															$options,
+															'archive_control_tax_' . $taxonomy->name . '_options'
+														);
 
-															<div class="archive-control-info archive-control-image-manual-message"<?php if ($image_val !== 'enabled' || $image_placement_val !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The image will be added if you place the_archive_thumbnail("large") within your theme files.'); ?><?php if ($image_val == 'enabled') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
-														</td>
-													</tr>
-													<tr valign="top">
-														<th scope="row"><label><?php _e('Content Before List'); ?></label></th>
-														<td>
-															<?php
-																$before_val = isset($options['before']) ? $options['before'] : null;
+														$this->archive_control_add_field_term_options(
+															$options,
+															'archive_control_tax_' . $taxonomy->name . '_options'
+														);
 
-																$before_placement_val = isset($options['before-placement']) ? $options['before-placement'] : null;
+													?>
 
-																$before_pages_val = isset($options['before-pages']) ? $options['before-pages'] : null;
-															?>
-
-															<select class="archive-control-before" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[before]">
-																<option value="default"<?php if ($before_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-																<option value="textarea"<?php if ($before_val == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enable Textarea'); ?></option>
-															</select>
-
-															<select class="archive-control-before-placement" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[before-placement]"<?php if ($before_val !== 'textarea') { echo " style='display:none;'"; } ?>>
-																<option value="automatic"<?php if ($before_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
-																<option value="function"<?php if ($before_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
-															</select>
-
-															<select class="archive-control-before-pages" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[before-pages]"<?php if ($before_val !== 'textarea') { echo " style='display:none;'"; } ?>>
-																<option value="all-pages"<?php if ($before_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
-																<option value="first"<?php if ($before_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
-															</select>
-
-															<div class="archive-control-info archive-control-before-automatic-message" <?php if ($before_val !== 'textarea' || $before_placement_val !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The content will be automatically added to the archive page before the posts loop.'); ?><?php if ($before_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
-
-															<div class="archive-control-info archive-control-before-manual-message"<?php if ($before_val !== 'textarea' || $before_placement_val !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The content will be added if you place  the_archive_top_content() within your theme files.'); ?><?php if ($before_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
-														</td>
-													</tr>
-													<tr valign="top">
-														<th scope="row"><label><?php _e('Content After List'); ?></label></th>
-														<td>
-															<?php
-																$after_val = isset($options['after']) ? $options['after'] : null;
-
-																$after_placement_val = isset($options['after-placement']) ? $options['after-placement'] : null;
-
-																$after_pages_val = isset($options['after-pages']) ? $options['after-pages'] : null;
-															?>
-															<select class="archive-control-after" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[after]">
-																<option value="default"<?php if ($after_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-																<option value="textarea"<?php if ($after_val == 'textarea') { echo "selected='selected'"; } ?>><?php _e('Enable Textarea'); ?></option>
-															</select>
-															<select class="archive-control-after-placement" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[after-placement]"<?php if ($after_val !== 'textarea') { echo " style='display:none;'"; } ?>>
-																<option value="automatic"<?php if ($after_placement_val == 'automatic') { echo "selected='selected'"; } ?>><?php _e('Automatic'); ?></option>
-																<option value="function"<?php if ($after_placement_val == 'function') { echo "selected='selected'"; } ?>><?php _e('Manual Function'); ?></option>
-															</select>
-															<select class="archive-control-after-pages" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[after-pages]"<?php if ($after_val !== 'textarea') { echo " style='display:none;'"; } ?>>
-																<option value="all-pages"<?php if ($after_pages_val == 'all-pages') { echo "selected='selected'"; } ?>><?php _e('All Page Numbers'); ?></option>
-																<option value="first"<?php if ($after_pages_val == 'first') { echo "selected='selected'"; } ?>><?php _e('First Page Only'); ?></option>
-															</select>
-															<div class="archive-control-info archive-control-after-automatic-message" <?php if ($after_val !== 'textarea' || $after_placement_val !== 'automatic') { echo " style='display:none;'"; } ?>><?php _e('The content will be automatically added to the archive page after the posts loop.'); ?><?php if ($after_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
-															<div class="archive-control-info archive-control-after-manual-message"<?php if ($after_val !== 'textarea' || $after_placement_val !== 'function') { echo " style='display:none;'"; } ?>><?php _e('The content will be added if you place  the_archive_bottom_content() within your theme files.'); ?><?php if ($after_val == 'textarea') { ?> <a href="<?php echo $edit_url; ?>"><?php _e('Edit'); ?></a><?php } ?></div>
-														</td>
-													</tr> */ ?>
-													<tr valign="top">
-														<th scope="row"><?php _e('Order By'); ?></th>
-														<td>
-															<?php
-																$orderby_val = isset($options['orderby']) ? $options['orderby'] : null;
-
-																$meta_key_val = isset($options['meta_key']) ? $options['meta_key'] : null;
-															?>
-															<select class="archive-control-order-by" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[orderby]">
-																<option value="default"<?php if ($orderby_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-																<option value="date"<?php if ($orderby_val == 'date') { echo "selected='selected'"; } ?>><?php _e('Date Published'); ?></option>
-																<option value="title"<?php if ($orderby_val == 'title') { echo "selected='selected'"; } ?>><?php _e('Title'); ?></option>
-																<option value="modified"<?php if ($orderby_val == 'modified') { echo "selected='selected'"; } ?>><?php _e('Date Modified'); ?></option>
-																<option value="menu_order"<?php if ($orderby_val == 'menu_order') { echo "selected='selected'"; } ?>><?php _e('Menu Order'); ?></option>
-																<option value="rand"<?php if ($orderby_val == 'rand') { echo "selected='selected'"; } ?>><?php _e('Random'); ?></option>
-																<option value="ID"<?php if ($orderby_val == 'ID') { echo "selected='selected'"; } ?>><?php _e('ID'); ?></option>
-																<option value="author"<?php if ($orderby_val == 'author') { echo "selected='selected'"; } ?>><?php _e('Author'); ?></option>
-																<option value="name"<?php if ($orderby_val == 'name') { echo "selected='selected'"; } ?>><?php _e('Post Slug'); ?></option>
-																<option value="type"<?php if ($orderby_val == 'type') { echo "selected='selected'"; } ?>><?php _e('Post Type'); ?></option>
-																<option value="comment_count"<?php if ($orderby_val == 'comment_count') { echo "selected='selected'"; } ?>><?php _e('Comment Count'); ?></option>
-																<option value="parent"<?php if ($orderby_val == 'parent') { echo "selected='selected'"; } ?>><?php _e('Parent'); ?></option>
-																<option value="meta_value"<?php if ($orderby_val == 'meta_value') { echo "selected='selected'"; } ?>><?php _e('Meta Value'); ?></option>
-																<option value="meta_value_num"<?php if ($orderby_val == 'meta_value_num') { echo "selected='selected'"; } ?>><?php _e('Meta Value (Numeric)'); ?></option>
-																<option value="none"<?php if ($orderby_val == 'none') { echo "selected='selected'"; } ?>><?php _e('No Order'); ?></option>
-															</select>
-															<input class="archive-control-meta-key" type="text" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[meta_key]" value="<?php echo esc_attr($meta_key_val); ?>" placeholder="<?php _e('Meta Key'); ?>"<?php if ($orderby_val !== 'meta_value' && $orderby_val !== 'meta_value_num') { echo " style='display:none;'"; } ?>/>
-														</td>
-													</tr>
-													<tr valign="top">
-														<th scope="row"><label><?php _e('Order'); ?></label></th>
-														<td>
-															<?php
-																$order_val = isset($options['order']) ? $options['order'] : null;
-															?>
-															<select name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[order]">
-																<option value="default"<?php if ($order_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-																<option value="asc"<?php if ($order_val == 'asc') { echo "selected='selected'"; } ?>><?php _e('Ascending'); ?></option>
-																<option value="desc"<?php if ($order_val == 'desc') { echo "selected='selected'"; } ?>><?php _e('Descending'); ?></option>
-															</select>
-														</td>
-													</tr>
-													<tr valign="top">
-														<th scope="row"><label><?php _e('Pagination'); ?></label></th>
-														<td>
-															<?php
-																$pagination_val = isset($options['pagination']) ? $options['pagination'] : null;
-																$posts_per_page_val = isset($options['posts_per_page']) ? $options['posts_per_page'] : null;
-															?>
-															<select class="archive-control-pagination" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[pagination]">
-																<option value="default"<?php if ($pagination_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-																<option value="none"<?php if ($pagination_val == 'none') { echo "selected='selected'"; } ?>><?php _e('Show Everything'); ?></option>
-																<option value="custom"<?php if ($pagination_val == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Posts Per Page'); ?></option>
-															</select>
-															<input class="archive-control-posts-per-page" type="text" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[posts_per_page]" value="<?php echo esc_attr($posts_per_page_val); ?>" placeholder="<?php _e('Posts per page'); ?>"<?php if ($pagination_val !== 'custom') { echo " style='display:none;'"; } ?>/>
-														</td>
-													</tr>
-													<?php /* <tr valign="top">
-														<th scope="row"><label><?php _e('Rewrite URL'); ?></label></th>
-														<td>
-															<?php
-																$pagination_val = isset($options['pagination']) ? $options['pagination'] : null;
-																$posts_per_page_val = isset($options['posts_per_page']) ? $options['posts_per_page'] : null;
-															?>
-															<select class="archive-control-pagination" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[pagination]">
-																<option value="default"<?php if ($pagination_val == 'default') { echo "selected='selected'"; } ?>><?php _e('Do not modify', 'archive-control'); ?></option>
-																<option value="none"<?php if ($pagination_val == 'none') { echo "selected='selected'"; } ?>><?php _e('Show Everything'); ?></option>
-																<option value="custom"<?php if ($pagination_val == 'custom') { echo "selected='selected'"; } ?>><?php _e('Custom Posts Per Page'); ?></option>
-															</select>
-															<input class="archive-control-posts-per-page" type="text" name="archive_control_tax_<?php echo esc_attr($taxonomy->name); ?>_options[posts_per_page]" value="<?php echo esc_attr($posts_per_page_val); ?>" placeholder="<?php _e('Posts per page'); ?>"<?php if ($pagination_val !== 'custom') { echo " style='display:none;'"; } ?>/>
-														</td>
-													</tr> */ ?>
 												</table>
 											</div><!-- .inside -->
 										</div><!-- .postbox -->
@@ -1079,7 +1329,7 @@ class Archive_Control {
 					}//handle page all/first options
 				} //image is enabled
 			} //has options
-		} // is_post_type_artchive
+		} // is_post_type_archive
 	}
 
 	/**

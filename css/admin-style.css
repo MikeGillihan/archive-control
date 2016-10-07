@@ -42,3 +42,14 @@
 	right:10px;
 	margin-top:-9px;
 }
+.taxonomy-image-area {
+    border: 1px solid #e5e5e5;
+	padding:8px 12px 12px;
+    -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    background: #fff;
+	max-width: 250px;
+}
+.taxonomy-image-area img {
+	margin-top:4px;
+}
