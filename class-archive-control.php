@@ -24,7 +24,7 @@ class Archive_Control {
 	 *
 	 * @const   string
 	 */
-	const VERSION = '1.2.1';
+	const VERSION = '1.3.0';
 
 	/**
 	 * Unique identifier for your plugin.
@@ -73,6 +73,7 @@ class Archive_Control {
 		add_action( 'loop_end', array( $this, 'archive_control_loop_end_content' ) );
 		add_action( 'admin_menu', array( $this, 'archive_control_menu' ) );
 		add_action( 'admin_init', array( $this, 'archive_control_settings' ) );
+		add_action( 'admin_head', array( $this, 'archive_control_remove_parent_field_from_post_taxonomy' ) );
 		add_action( 'init', array( $this, 'archive_control_handle_taxonomy_fields' ) );
 		add_action( 'init', array( $this, 'archive_control_handle_updates' ), 999 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'archive_control_custom_admin_style_scripts' ) );
@@ -255,7 +256,6 @@ class Archive_Control {
 				register_setting( 'archive-control-' . $post_type->name . '-group', 'archive_control_cpt_' . $post_type->name . '_image' );
 				register_setting( 'archive-control-' . $post_type->name . '-group', 'archive_control_cpt_' . $post_type->name . '_before' );
 				register_setting( 'archive-control-' . $post_type->name . '-group', 'archive_control_cpt_' . $post_type->name . '_after' );
-
 			}
 		}
 		$custom_taxonomies = $this->archive_control_get_taxes();
@@ -342,7 +342,7 @@ class Archive_Control {
 				$after_val = isset($options['after']) ? $options['after'] : null;
 				$term_order_pagination_val = isset($options['term_order_pagination']) ? $options['term_order_pagination'] : null;
 				if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_order_pagination_val == 'enabled') {
-					//add_action( $taxonomy->name . '_add_form_fields', array( $this, 'archive_control_add_taxonomy_fields'), 10, 2 );
+					add_action( $taxonomy->name . '_add_form_fields', array( $this, 'archive_control_add_taxonomy_fields'), 10, 2 );
 					add_action( $taxonomy->name . '_edit_form_fields', array( $this, 'archive_control_edit_taxonomy_fields'), 10, 2 );
 					add_action( 'edited_' . $taxonomy->name, array( $this, 'archive_control_edit_taxonomy_meta'), 10, 2 );
 				}
@@ -355,6 +355,7 @@ class Archive_Control {
 		$after_val = isset($options['after']) ? $options['after'] : null;
 		$term_order_pagination_val = isset($options['term_order_pagination']) ? $options['term_order_pagination'] : null;
 		if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_order_pagination_val == 'enabled') {
+			add_action( 'category_add_form_fields', array( $this, 'archive_control_add_taxonomy_fields'), 10, 2 );
 			add_action( 'category_edit_form_fields', array( $this, 'archive_control_edit_taxonomy_fields'), 10, 2 );
 			add_action( 'edited_category', array( $this, 'archive_control_edit_taxonomy_meta'), 10, 2 );
 		}
@@ -365,6 +366,7 @@ class Archive_Control {
 		$after_val = isset($options['after']) ? $options['after'] : null;
 		$term_order_pagination_val = isset($options['term_order_pagination']) ? $options['term_order_pagination'] : null;
 		if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_order_pagination_val == 'enabled') {
+			add_action( 'post_tag_add_form_fields', array( $this, 'archive_control_add_taxonomy_fields'), 10, 2 );
 			add_action( 'post_tag_edit_form_fields', array( $this, 'archive_control_edit_taxonomy_fields'), 10, 2 );
 			add_action( 'edited_post_tag', array( $this, 'archive_control_edit_taxonomy_meta'), 10, 2 );
 		}
@@ -409,6 +411,47 @@ class Archive_Control {
 	    }
 		if (!empty($archive_control_term_meta)) {
 			update_term_meta( $term_id, 'archive_control_term_meta', $archive_control_term_meta );
+		}
+	}
+
+	/**
+	 * Add custom fields to the add taxonomy screen
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_add_taxonomy_fields($taxonomy) {
+		$options = get_option('archive_control_tax_' . $taxonomy . '_options');
+		if ($options) {
+			$hide_parent_val = isset($options['hide_parent']) ? $options['hide_parent'] : null;
+			if ($hide_parent_val == 'hidden') {
+				?><style>#addtag .term-parent-wrap {display:none;}</style><?php
+			}
+			$hide_description_val = isset($options['hide_description']) ? $options['hide_description'] : null;
+			if ($hide_description_val == 'hidden') {
+				?><style>#addtag .term-description-wrap {display:none;}</style><?php
+			}
+		}
+	}
+
+	/**
+	 * Hide the "Parent" field when adding a term inline (if option is set)
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_remove_parent_field_from_post_taxonomy()
+	{
+		$screen = get_current_screen();
+		if ($screen->base == 'post') {
+			$custom_taxonomies = $this->archive_control_get_taxes();
+			if (!empty($custom_taxonomies)) {
+				foreach($custom_taxonomies as $taxonomy) {
+					$options = get_option('archive_control_tax_' . $taxonomy->name . '_options');
+					$hide_parent = isset($options['hide_parent']) ? $options['hide_parent'] : null;
+					if ($hide_parent == 'hidden') {
+						echo "<style>#new" . $taxonomy->name . "_parent {display:none;}</style>";
+					}
+				}
+			}
 		}
 	}
 
@@ -1117,6 +1160,11 @@ class Archive_Control {
 															'archive_control_tax_' . $taxonomy->name . '_options'
 														);
 
+														$this->archive_control_add_field_pagination(
+															$options,
+															'archive_control_tax_' . $taxonomy->name . '_options'
+														);
+
 														$this->archive_control_add_field_term_options(
 															$options,
 															'archive_control_tax_' . $taxonomy->name . '_options'
@@ -1239,7 +1287,7 @@ class Archive_Control {
 									$query->set( 'posts_per_page', $term_options['posts_per_page'] );
 								}
 							}
-							if ($options['pagination'] == 'none') {
+							if ($term_options['pagination'] == 'none') {
 								$query->set( 'posts_per_page', -1 );
 							}
 						} //has pagination value
@@ -1281,11 +1329,26 @@ class Archive_Control {
 				if ($options['before'] == 'textarea' && $options['before-placement'] == $placement) {
 					$paged = get_query_var( 'paged', 0);
 					if($options['before-pages'] == 'all-pages' || ($options['before-pages'] == 'first' && $paged == 0)) {
-						Archive_Control::archive_control_archive_top_content(true, $post_type);
+						Archive_Control::archive_control_archive_top_content($html);
 					}//handle page all/first options
 				} //before textarea is enabled
 			} //has options
 		} // is_post_type_archive
+		if (is_tax() || is_category() || is_tag()) {
+			$taxonomy = null;
+			if (is_tax()) $taxonomy = get_query_var('taxonomy');
+			if (is_category()) $taxonomy = 'category';
+			if (is_tag()) $taxonomy = 'post_tag';
+			$options = get_option('archive_control_tax_' . $taxonomy . '_options');
+			if ($options) {
+				if ($options['before'] == 'textarea' && $options['before-placement'] == $placement) {
+					$paged = get_query_var( 'paged', 0);
+					if($options['before-pages'] == 'all-pages' || ($options['before-pages'] == 'first' && $paged == 0)) {
+						Archive_Control::archive_control_archive_top_content($html);
+					}//handle page all/first options
+				} //before textarea is enabled
+			} //has options
+		} //is_tax, cat, tag
 	}
 
 	/**
@@ -1294,11 +1357,11 @@ class Archive_Control {
 	 * @since    1.1.0
 	 *
 	 * @param    boolean    $html        Whether to show the optional html markup surrounding the textarea
-	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 * @param    string    	$post_type_slug	 A post type slug that the content belongs to
 	 */
-	public static function archive_control_archive_top_content($html = true, $post_type = null)
+	public static function archive_control_archive_top_content($html = true, $post_type_slug = null, $term_id = null)
 	{
-		$content = Archive_Control::archive_control_get_archive_top_content($post_type);
+		$content = Archive_Control::archive_control_get_archive_top_content($post_type_slug, $term_id);
 		if ($content) {
 			if ($html === true) {
 				echo "<div class='archive-control-area archive-control-area-before'>";
@@ -1317,16 +1380,26 @@ class Archive_Control {
 	 *
 	 * @since    1.1.0
 	 *
-	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 * @param    string    	$post_type_slug	 A post type slug that the content belongs to
+	 * @param    string    	$term_id	 A taxonomy term id that the content belongs to
 	 */
-	public static function archive_control_get_archive_top_content($post_type = null)
+	public static function archive_control_get_archive_top_content($post_type_slug = null, $term_id = null)
 	{
-		if ($post_type === null) {
+		if ($post_type_slug === null && $term_id === null) {
 			if (is_post_type_archive()) {
-				$post_type = get_query_var('post_type', null);
+				$post_type_slug = get_query_var('post_type', null);
+			}
+			if (is_tax() || is_category() || is_tag()) {
+				$term = get_queried_object();
+				$term_id = $term->term_id;
 			}
 		}
-		$archive_control_cpt_before = get_option('archive_control_cpt_' . $post_type . '_before');
+		$archive_control_cpt_before = null;
+		if ($post_type_slug) {
+			$archive_control_cpt_before = get_option('archive_control_cpt_' . $post_type_slug . '_before');
+		} elseif ($term_id) {
+			$archive_control_cpt_before = get_term_meta( $term_id, 'archive_control_term_before', true );
+		}
 		if ($archive_control_cpt_before) {
 			return apply_filters( 'the_content', $archive_control_cpt_before );
 		} //if has before content
@@ -1364,6 +1437,21 @@ class Archive_Control {
 				} //image is enabled
 			} //has options
 		} // is_post_type_archive
+		if (is_tax() || is_category() || is_tag()) {
+			$taxonomy = null;
+			if (is_tax()) $taxonomy = get_query_var('taxonomy');
+			if (is_category()) $taxonomy = 'category';
+			if (is_tag()) $taxonomy = 'post_tag';
+			$options = get_option('archive_control_tax_' . $taxonomy . '_options');
+			if ($options) {
+				if ($options['image'] == 'enabled' && $options['image-placement'] == 'automatic') {
+					$paged = get_query_var( 'paged', 0);
+					if($options['image-pages'] == 'all-pages' || ($options['image-pages'] == 'first' && $paged == 0)) {
+						Archive_Control::archive_control_the_archive_thumbnail();
+					}//handle page all/first options
+				} //image is enabled
+			} //has options
+		} //is_tax, cat, tag
 	}
 
 	/**
@@ -1371,19 +1459,21 @@ class Archive_Control {
 	 *
 	 * @since    1.1.0
 	 *
-	 * @param    string     $size        The image size that you want displayed
-	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 * @param    string     $size       	 The image size that you want displayed
+	 * @param    string    	$post_type_slug	 A post type slug that the content belongs to
+	 * @param    string    	$term_id	 	A taxonomy term id that the content belongs to
 	 */
-	public static function archive_control_the_archive_thumbnail($size = 'large', $post_type = null)
+	public static function archive_control_the_archive_thumbnail($size = 'large', $post_type_slug = null, $term_id = null)
 	{
-		if ($post_type === null) {
-			if (is_post_type_archive()) {
-				$post_type = get_query_var('post_type', null);
-			}
-		}
-		$featured_img_id = Archive_Control::archive_control_get_archive_thumbnail_id($post_type);
+		// if ($post_type_slug === null) {
+		// 	if (is_post_type_archive()) {
+		// 		$post_type_slug = get_query_var('post_type', null);
+		// 	}
+		// }
+
+		$featured_img_id = Archive_Control::archive_control_get_archive_thumbnail_id($post_type_slug, $term_id);
 		if ($featured_img_id) {
-			echo "<div class='post-thumbnail archive-thumbnail archive-type-" . esc_attr($post_type) . "'>";
+			echo "<div class='post-thumbnail archive-thumbnail archive-type-" . esc_attr($post_type_slug) . "'>";
 				echo wp_get_attachment_image($featured_img_id, $size);
 			echo "</div>";
 		}
@@ -1394,22 +1484,18 @@ class Archive_Control {
 	 *
 	 * @since    1.1.0
 	 *
-	 * @param    string     $size        The image size that you want displayed
-	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 * @param    string     $size        	The image size that you want displayed
+	 * @param    string    	$post_type_slug	A post type slug that the content belongs to
+	 * @param    string    	$term_id	 	A taxonomy term id that the content belongs to
 	 */
-	public static function archive_control_get_archive_thumbnail_src($size = 'large', $post_type = null)
+	public static function archive_control_get_archive_thumbnail_src($size = 'large', $post_type_slug = null, $term_id = null)
 	{
-		if ($post_type === null) {
-			if (is_post_type_archive()) {
-				$post_type = get_query_var('post_type', null);
-			}
-		}
-		$featured_img_id = Archive_Control::archive_control_get_archive_thumbnail_id($post_type);
+		$featured_img_id = Archive_Control::archive_control_get_archive_thumbnail_id($post_type_slug, $term_id);
 		if ($featured_img_id) {
 			$featured_img_src = wp_get_attachment_image_src( $featured_img_id, $size );
 			if (is_array($featured_img_src)) {
-				$thing = $featured_img_src[0];
-				return $thing;
+				$src = $featured_img_src[0];
+				return $src;
 			}
 		}
 	}
@@ -1419,19 +1505,29 @@ class Archive_Control {
 	 *
 	 * @since    1.1.0
 	 *
-	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 * @param    string    	$post_type_slug	A post type slug that the content belongs to
+	 * @param    string    	$term_id	 	A taxonomy term id that the content belongs to
 	 */
-	public static function archive_control_get_archive_thumbnail_id($post_type = null)
+	public static function archive_control_get_archive_thumbnail_id($post_type_slug = null, $term_id = null)
 	{
-		if ($post_type === null) {
+		if ($post_type_slug === null && $term_id === null) {
 			if (is_post_type_archive()) {
-				$post_type = get_query_var('post_type', null);
+				$post_type_slug = get_query_var('post_type', null);
+			}
+			if (is_tax() || is_category() || is_tag()) {
+				$term = get_queried_object();
+				$term_id = $term->term_id;
 			}
 		}
-		$archive_control_cpt_image_id = get_option('archive_control_cpt_' . $post_type . '_image');
-		if ($archive_control_cpt_image_id) {
-			if ( wp_attachment_is_image( $archive_control_cpt_image_id ) ) {
-				return $archive_control_cpt_image_id;
+		$archive_control_image_id = null;
+		if ($post_type_slug) {
+			$archive_control_image_id = get_option('archive_control_cpt_' . $post_type_slug . '_image');
+		} elseif ($term_id) {
+			$archive_control_image_id = get_term_meta( $term_id, 'archive_control_term_image', true );
+		}
+		if ($archive_control_image_id) {
+			if ( wp_attachment_is_image( $archive_control_image_id ) ) {
+				return $archive_control_image_id;
 			}
 		}
 	}
@@ -1467,11 +1563,26 @@ class Archive_Control {
 				if ($options['after'] == 'textarea' && $options['after-placement'] == $placement) {
 					$paged = get_query_var( 'paged', 0);
 					if($options['after-pages'] == 'all-pages' || ($options['after-pages'] == 'first' && $paged == 0)) {
-						Archive_Control::archive_control_archive_bottom_content(true, $post_type);
+						Archive_Control::archive_control_archive_bottom_content($html);
 					}//handle page all/first options
-				} //before textarea is enabled
+				} //after textarea is enabled
 			} //has options
 		} // is_post_type_archive
+		if (is_tax() || is_category() || is_tag()) {
+			$taxonomy = null;
+			if (is_tax()) $taxonomy = get_query_var('taxonomy');
+			if (is_category()) $taxonomy = 'category';
+			if (is_tag()) $taxonomy = 'post_tag';
+			$options = get_option('archive_control_tax_' . $taxonomy . '_options');
+			if ($options) {
+				if ($options['after'] == 'textarea' && $options['after-placement'] == $placement) {
+					$paged = get_query_var( 'paged', 0);
+					if($options['after-pages'] == 'all-pages' || ($options['after-pages'] == 'first' && $paged == 0)) {
+						Archive_Control::archive_control_archive_bottom_content($html);
+					}//handle page all/first options
+				} //after textarea is enabled
+			} //has options
+		} //is_tax, cat, tag
 	}
 
 	/**
@@ -1479,12 +1590,12 @@ class Archive_Control {
 	 *
 	 * @since    1.1.0
 	 *
-	 * @param    boolean    $html        Whether to show the optional html markup surrounding the textarea
-	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 * @param    boolean    $html        		Whether to show the optional html markup surrounding the textarea
+	 * @param    string    	$post_type_slug	 	A post type slug that the content belongs to
 	 */
-	public static function archive_control_archive_bottom_content($html = true, $post_type = null)
+	public static function archive_control_archive_bottom_content($html = true, $post_type_slug = null, $term_id = null)
 	{
-		$content = Archive_Control::archive_control_get_archive_bottom_content($post_type);
+		$content = Archive_Control::archive_control_get_archive_bottom_content($post_type_slug, $term_id);
 		if ($content) {
 			if ($html === true) {
 				echo "<div class='archive-control-area archive-control-area-after'>";
@@ -1503,16 +1614,26 @@ class Archive_Control {
 	 *
 	 * @since    1.1.0
 	 *
-	 * @param    string    	$post_type	 A post type slug that the content belongs to
+	 * @param    string    	$post_type_slug	 	A post type slug that the content belongs to
+	 * @param    string    	$term_id	 		A taxonomy term id that the content belongs to
 	 */
-	public static function archive_control_get_archive_bottom_content($post_type = null)
+	public static function archive_control_get_archive_bottom_content($post_type_slug = null, $term_id = null)
 	{
-		if ($post_type === null) {
+		if ($post_type_slug === null && $term_id === null) {
 			if (is_post_type_archive()) {
-				$post_type = get_query_var('post_type', null);
+				$post_type_slug = get_query_var('post_type', null);
+			}
+			if (is_tax() || is_category() || is_tag()) {
+				$term = get_queried_object();
+				$term_id = $term->term_id;
 			}
 		}
-		$archive_control_cpt_after = get_option('archive_control_cpt_' . $post_type . '_after');
+		$archive_control_cpt_after = null;
+		if ($post_type_slug) {
+			$archive_control_cpt_after = get_option('archive_control_cpt_' . $post_type_slug . '_after');
+		} elseif ($term_id) {
+			$archive_control_cpt_after = get_term_meta( $term_id, 'archive_control_term_after', true );
+		}
 		if ($archive_control_cpt_after) {
 			return apply_filters( 'the_content', $archive_control_cpt_after );
 		} //if has after content
@@ -1581,15 +1702,15 @@ if ( ! function_exists( 'the_archive_top_content' ) )
 
 if ( ! function_exists( 'archive_top_content' ) )
 {
-    function archive_top_content($html = true, $post_type = null) {
-		Archive_Control::archive_control_archive_top_content($html, $post_type);
+    function archive_top_content($html = true, $post_type_slug = null, $term_id = null) {
+		Archive_Control::archive_control_archive_top_content($html, $post_type_slug, $term_id);
     }
 }
 
 if ( ! function_exists( 'get_archive_top_content' ) )
 {
-    function get_archive_top_content($post_type = null) {
-		return Archive_Control::archive_control_get_archive_top_content($post_type);
+    function get_archive_top_content($post_type_slug = null, $term_id = null) {
+		return Archive_Control::archive_control_get_archive_top_content($post_type_slug, $term_id);
     }
 }
 
@@ -1602,35 +1723,35 @@ if ( ! function_exists( 'the_archive_bottom_content' ) )
 
 if ( ! function_exists( 'archive_bottom_content' ) )
 {
-    function archive_bottom_content($html = true, $post_type = null) {
-		Archive_Control::archive_control_archive_bottom_content($html, $post_type);
+    function archive_bottom_content($html = true, $post_type_slug = null, $term_id = null) {
+		Archive_Control::archive_control_archive_bottom_content($html, $post_type_slug, $term_id);
     }
 }
 
 if ( ! function_exists( 'get_archive_bottom_content' ) )
 {
-    function get_archive_bottom_content($post_type = null) {
-		return Archive_Control::archive_control_get_archive_bottom_content($post_type);
+    function get_archive_bottom_content($post_type_slug = null, $term_id = null) {
+		return Archive_Control::archive_control_get_archive_bottom_content($post_type_slug, $term_id);
     }
 }
 
 if ( ! function_exists( 'get_archive_thumbnail_id' ) )
 {
-    function get_archive_thumbnail_id($post_type = null) {
-		return Archive_Control::archive_control_get_archive_thumbnail_id($post_type);
+    function get_archive_thumbnail_id($post_type_slug = null, $term_id = null) {
+		return Archive_Control::archive_control_get_archive_thumbnail_id($post_type_slug, $term_id);
     }
 }
 
 if ( ! function_exists( 'get_archive_thumbnail_src' ) )
 {
-    function get_archive_thumbnail_src($size = null, $post_type = null) {
-		return Archive_Control::archive_control_get_archive_thumbnail_src($size, $post_type);
+    function get_archive_thumbnail_src($size = null, $post_type_slug = null, $term_id = null) {
+		return Archive_Control::archive_control_get_archive_thumbnail_src($size, $post_type_slug, $term_id);
     }
 }
 
 if ( ! function_exists( 'the_archive_thumbnail' ) )
 {
-    function the_archive_thumbnail($size = null, $post_type = null) {
-		Archive_Control::archive_control_the_archive_thumbnail($size, $post_type);
+    function the_archive_thumbnail($size = null, $post_type_slug = null, $term_id = null) {
+		Archive_Control::archive_control_the_archive_thumbnail($size, $post_type_slug, $term_id);
     }
 }
