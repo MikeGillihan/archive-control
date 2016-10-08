@@ -315,7 +315,7 @@ class Archive_Control {
 	 *
 	 * @since    1.2.0
 	 */
-	public function archive_control_get_taxes()
+	public function archive_control_get_taxes($with_cats_tags = false)
 	{
 		$custom_taxonomies = array();
 		$args = array(
@@ -323,6 +323,14 @@ class Archive_Control {
   			'_builtin' => false
 		);
 		$custom_taxonomies = get_taxonomies($args, 'objects' );
+		if ($with_cats_tags === true) {
+			$default_taxonomies = array();
+			$category_tax_object = get_taxonomy( 'category' );
+			$default_taxonomies['category'] = $category_tax_object;
+			$post_tag_tax_object = get_taxonomy( 'post_tag' );
+			$default_taxonomies['post_tag'] = $post_tag_tax_object;
+			$custom_taxonomies = array_merge($default_taxonomies,$custom_taxonomies);
+		}
 		return $custom_taxonomies;
 	}
 
@@ -333,7 +341,7 @@ class Archive_Control {
 	 */
 	public function archive_control_handle_taxonomy_fields()
 	{
-		$custom_taxonomies = $this->archive_control_get_taxes();
+		$custom_taxonomies = $this->archive_control_get_taxes(true);
 		if (!empty($custom_taxonomies)) {
 			foreach($custom_taxonomies as $taxonomy) {
 				$options = get_option('archive_control_tax_' . $taxonomy->name . '_options');
@@ -346,30 +354,23 @@ class Archive_Control {
 					add_action( $taxonomy->name . '_edit_form_fields', array( $this, 'archive_control_edit_taxonomy_fields'), 10, 2 );
 					add_action( 'edited_' . $taxonomy->name, array( $this, 'archive_control_edit_taxonomy_meta'), 10, 2 );
 				}
+				$hide_description = isset($options['hide_description']) ? $options['hide_description'] : null;
+				if ($hide_description == 'hidden') {
+					add_filter( 'manage_edit-' .  $taxonomy->name . '_columns', array( $this, 'archive_control_remove_taxonomy_description_column' ) );
+				}
 			}
 		}
-		//For categories
-		$options = get_option('archive_control_tax_category_options');
-		$image_val = isset($options['image']) ? $options['image'] : null;
-		$before_val = isset($options['before']) ? $options['before'] : null;
-		$after_val = isset($options['after']) ? $options['after'] : null;
-		$term_order_pagination_val = isset($options['term_order_pagination']) ? $options['term_order_pagination'] : null;
-		if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_order_pagination_val == 'enabled') {
-			add_action( 'category_add_form_fields', array( $this, 'archive_control_add_taxonomy_fields'), 10, 2 );
-			add_action( 'category_edit_form_fields', array( $this, 'archive_control_edit_taxonomy_fields'), 10, 2 );
-			add_action( 'edited_category', array( $this, 'archive_control_edit_taxonomy_meta'), 10, 2 );
-		}
-		//For tags
-		$options = get_option('archive_control_tax_post_tag_options');
-		$image_val = isset($options['image']) ? $options['image'] : null;
-		$before_val = isset($options['before']) ? $options['before'] : null;
-		$after_val = isset($options['after']) ? $options['after'] : null;
-		$term_order_pagination_val = isset($options['term_order_pagination']) ? $options['term_order_pagination'] : null;
-		if ($image_val == 'enabled' || $before_val == 'textarea' || $after_val == 'textarea' || $term_order_pagination_val == 'enabled') {
-			add_action( 'post_tag_add_form_fields', array( $this, 'archive_control_add_taxonomy_fields'), 10, 2 );
-			add_action( 'post_tag_edit_form_fields', array( $this, 'archive_control_edit_taxonomy_fields'), 10, 2 );
-			add_action( 'edited_post_tag', array( $this, 'archive_control_edit_taxonomy_meta'), 10, 2 );
-		}
+	}
+
+	/**
+	 * Remove the taxonomy description column if set
+	 *
+	 * @since    1.3.0
+	 */
+	public function archive_control_remove_taxonomy_description_column($columns)
+	{
+		if( isset( $columns['description'] ) ) unset( $columns['description'] );
+    	return $columns;
 	}
 
 	/**
@@ -415,7 +416,7 @@ class Archive_Control {
 	}
 
 	/**
-	 * Add custom fields to the add taxonomy screen
+	 * Hide fields from the add taxonomy screen
 	 *
 	 * @since    1.3.0
 	 */
@@ -442,7 +443,7 @@ class Archive_Control {
 	{
 		$screen = get_current_screen();
 		if ($screen->base == 'post') {
-			$custom_taxonomies = $this->archive_control_get_taxes();
+			$custom_taxonomies = $this->archive_control_get_taxes(true);
 			if (!empty($custom_taxonomies)) {
 				foreach($custom_taxonomies as $taxonomy) {
 					$options = get_option('archive_control_tax_' . $taxonomy->name . '_options');
@@ -672,7 +673,24 @@ class Archive_Control {
 	 *
 	 * @since    1.3.0
 	 */
-	public function archive_control_add_field_titles($options, $name, $label, $remove_label ,$allow_custom = false) {
+	public function archive_control_add_field_titles($options, $name, $taxonomy = null) {
+		if (isset($taxonomy)) {
+			$allow_custom = false;
+			if ($taxonomy->name == 'category') {
+				$label = __('Category Titles', 'archive-control');
+				$remove_label = __('Remove Label (Category:)', 'archive-control');
+			} elseif ($taxonomy->name == 'post_tag') {
+				$label = __('Tag Titles', 'archive-control');
+				$remove_label = __('Remove Label (Tag:)', 'archive-control');
+			} else {
+				$label = __('Term Titles', 'archive-control');
+				$remove_label = __('Remove Label (Taxonomy:)', 'archive-control');
+			}
+		} else {
+			$allow_custom = true;
+			$label = __('CPT Archive Title', 'archive-control');
+			$remove_label = __('Remove Label (Archive:)', 'archive-control');
+		}
 		$title_val = isset($options['title']) ? $options['title'] : null;
 		?><tr valign="top">
 			<th scope="row"><label><?php echo $label; ?></label></th>
@@ -859,7 +877,7 @@ class Archive_Control {
 	 *
 	 * @since    1.3.0
 	 */
-	public function archive_control_add_field_term_options($options, $name) {
+	public function archive_control_add_field_term_options($options, $name, $taxonomy) {
 		$term_order_pagination_val = isset($options['term_order_pagination']) ? $options['term_order_pagination'] : null;
 		$hide_parent_val = isset($options['hide_parent']) ? $options['hide_parent'] : null;
 		$hide_description_val = isset($options['hide_description']) ? $options['hide_description'] : null;
@@ -867,8 +885,10 @@ class Archive_Control {
 			<th scope="row"><label><?php _e('Term Edit Options', 'archive-control'); ?></label></th>
 			<td>
 				<label class="checkbox-label"><input type="checkbox" name="<?php echo esc_attr($name); ?>[term_order_pagination]" value="enabled"<?php if ($term_order_pagination_val == 'enabled') { echo "checked='checked'"; } ?>> <?php _e('Per Term Order & Pagination', 'archive-control'); ?></label>
-				<label class="checkbox-label"><input type="checkbox" name="<?php echo esc_attr($name); ?>[hide_parent]" value="hidden"<?php if ($hide_parent_val == 'hidden') { echo "checked='checked'"; } ?>> <?php _e('Hide Parent Field', 'archive-control'); ?></label>
-				<label class="checkbox-label"><input type="checkbox" name="<?php echo esc_attr($name); ?>[hide_description]" value="hidden"<?php if ($hide_parent_val == 'hidden') { echo "checked='checked'"; } ?>> <?php _e('Hide Description Field', 'archive-control'); ?></label>
+				<label class="checkbox-label"><input type="checkbox" name="<?php echo esc_attr($name); ?>[hide_description]" value="hidden"<?php if ($hide_description_val == 'hidden') { echo "checked='checked'"; } ?>> <?php _e('Hide Description Field', 'archive-control'); ?></label>
+				<?php if (is_taxonomy_hierarchical($taxonomy)) { ?>
+					<label class="checkbox-label"><input type="checkbox" name="<?php echo esc_attr($name); ?>[hide_parent]" value="hidden"<?php if ($hide_parent_val == 'hidden') { echo "checked='checked'"; } ?>> <?php _e('Hide Parent Field', 'archive-control'); ?></label>
+				<?php } ?>
 			</td>
 		</tr><?php
 	}
@@ -942,10 +962,7 @@ class Archive_Control {
 
 														$this->archive_control_add_field_titles(
 															$options,
-															'archive_control_cpt_' . $post_type->name . '_options',
-															__('CPT Archive Title', 'archive-control'),
-															__('Remove Label (Archive:)', 'archive-control'),
-															true
+															'archive_control_cpt_' . $post_type->name . '_options'
 														);
 
 														$this->archive_control_add_field_image(
@@ -1003,122 +1020,10 @@ class Archive_Control {
 								<?php include('admin-sidebar.php' ); ?>
 							</div><!-- .postbox-container -->
 							<div id="postbox-container-2" class="postbox-container">
-								<div class="postbox">
-									<h2 class="hndle ui-sortable-handle"><span><?php _e('Categories'); ?></span></h2>
-									<div class="inside">
-										<table class="form-table">
-
-											<?php
-
-												$options = get_option('archive_control_tax_category_options');
-
-												$this->archive_control_add_field_titles(
-													$options,
-													'archive_control_tax_category_options',
-													__('Category Titles', 'archive-control'),
-													__('Remove Label (Category:)', 'archive-control')
-												);
-
-												$this->archive_control_add_field_image(
-													$options,
-													'archive_control_tax_category_options'
-												);
-
-												$this->archive_control_add_field_before(
-													$options,
-													'archive_control_tax_category_options'
-												);
-
-												$this->archive_control_add_field_after(
-													$options,
-													'archive_control_tax_category_options'
-												);
-
-												$this->archive_control_add_field_orderby(
-													$options,
-													'archive_control_tax_category_options'
-												);
-
-												$this->archive_control_add_field_order(
-													$options,
-													'archive_control_tax_category_options'
-												);
-
-												$this->archive_control_add_field_pagination(
-													$options,
-													'archive_control_tax_category_options'
-												);
-
-												$this->archive_control_add_field_term_options(
-													$options,
-													'archive_control_tax_category_options'
-												);
-
-											?>
-
-										</table>
-									</div><!-- .inside -->
-								</div><!-- .postbox -->
-								<div class="postbox">
-									<h2 class="hndle ui-sortable-handle"><span><?php _e('Tags'); ?></span></h2>
-									<div class="inside">
-										<table class="form-table">
-
-											<?php
-
-												$options = get_option('archive_control_tax_post_tag_options');
-
-												$this->archive_control_add_field_titles(
-													$options,
-													'archive_control_tax_post_tag_options',
-													__('Tag Titles', 'archive-control'),
-													__('Remove Label (Tag:)', 'archive-control')
-												);
-
-												$this->archive_control_add_field_image(
-													$options,
-													'archive_control_tax_post_tag_options'
-												);
-
-												$this->archive_control_add_field_before(
-													$options,
-													'archive_control_tax_post_tag_options'
-												);
-
-												$this->archive_control_add_field_after(
-													$options,
-													'archive_control_tax_post_tag_options'
-												);
-
-												$this->archive_control_add_field_orderby(
-													$options,
-													'archive_control_tax_post_tag_options'
-												);
-
-												$this->archive_control_add_field_order(
-													$options,
-													'archive_control_tax_post_tag_options'
-												);
-
-												$this->archive_control_add_field_pagination(
-													$options,
-													'archive_control_tax_post_tag_options'
-												);
-
-												$this->archive_control_add_field_term_options(
-													$options,
-													'archive_control_tax_post_tag_options'
-												);
-
-											?>
-
-										</table>
-									</div><!-- .inside -->
-								</div><!-- .postbox -->
 								<?php
-								$custom_taxonomies = $this->archive_control_get_taxes();
-								if (!empty($custom_taxonomies)) {
-									foreach($custom_taxonomies as $taxonomy) {
+								$taxonomies = $this->archive_control_get_taxes(true);
+								if (!empty($taxonomies)) {
+									foreach($taxonomies as $taxonomy) {
 										$options = get_option('archive_control_tax_' . $taxonomy->name . '_options');
 										?>
 										<div class="postbox">
@@ -1131,8 +1036,7 @@ class Archive_Control {
 														$this->archive_control_add_field_titles(
 															$options,
 															'archive_control_tax_' . $taxonomy->name . '_options',
-															__('Term Titles', 'archive-control'),
-															__('Remove Label (Taxonomy:)', 'archive-control')
+															$taxonomy
 														);
 
 														$this->archive_control_add_field_image(
@@ -1167,7 +1071,8 @@ class Archive_Control {
 
 														$this->archive_control_add_field_term_options(
 															$options,
-															'archive_control_tax_' . $taxonomy->name . '_options'
+															'archive_control_tax_' . $taxonomy->name . '_options',
+															$taxonomy->name
 														);
 
 													?>
