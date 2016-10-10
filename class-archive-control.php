@@ -24,7 +24,7 @@ class Archive_Control {
 	 *
 	 * @const   string
 	 */
-	const VERSION = '1.3.1';
+	const VERSION = '1.3.2';
 
 	/**
 	 * Unique identifier for your plugin.
@@ -716,7 +716,7 @@ class Archive_Control {
 	 *
 	 * @since    1.3.0
 	 */
-	public function archive_control_add_field_image($options, $name) {
+	public function archive_control_add_field_image($options, $name, $edit_url) {
 		$image_val = isset($options['image']) ? $options['image'] : null;
 		$image_placement_val = isset($options['image-placement']) ? $options['image-placement'] : null;
 		$image_pages_val = isset($options['image-pages']) ? $options['image-pages'] : null;
@@ -750,7 +750,7 @@ class Archive_Control {
 	 *
 	 * @since    1.3.0
 	 */
-	public function archive_control_add_field_before($options, $name) {
+	public function archive_control_add_field_before($options, $name, $edit_url) {
 		$before_val = isset($options['before']) ? $options['before'] : null;
 		$before_placement_val = isset($options['before-placement']) ? $options['before-placement'] : null;
 		$before_pages_val = isset($options['before-pages']) ? $options['before-pages'] : null;
@@ -780,7 +780,7 @@ class Archive_Control {
 	 *
 	 * @since    1.3.0
 	 */
-	public function archive_control_add_field_after($options, $name) {
+	public function archive_control_add_field_after($options, $name, $edit_url) {
 		$after_val = isset($options['after']) ? $options['after'] : null;
 		$after_placement_val = isset($options['after-placement']) ? $options['after-placement'] : null;
 		$after_pages_val = isset($options['after-pages']) ? $options['after-pages'] : null;
@@ -973,17 +973,20 @@ class Archive_Control {
 
 														$this->archive_control_add_field_image(
 															$options,
-															'archive_control_cpt_' . $post_type->name . '_options'
+															'archive_control_cpt_' . $post_type->name . '_options',
+															$edit_url
 														);
 
 														$this->archive_control_add_field_before(
 															$options,
-															'archive_control_cpt_' . $post_type->name . '_options'
+															'archive_control_cpt_' . $post_type->name . '_options',
+															$edit_url
 														);
 
 														$this->archive_control_add_field_after(
 															$options,
-															'archive_control_cpt_' . $post_type->name . '_options'
+															'archive_control_cpt_' . $post_type->name . '_options',
+															$edit_url
 														);
 
 														$this->archive_control_add_field_orderby(
@@ -1030,6 +1033,7 @@ class Archive_Control {
 								$taxonomies = $this->archive_control_get_taxes(true);
 								if (!empty($taxonomies)) {
 									foreach($taxonomies as $taxonomy) {
+										$edit_url = get_admin_url() . 'edit-tags.php?taxonomy=' . $taxonomy->name;
 										$options = get_option('archive_control_tax_' . $taxonomy->name . '_options');
 										?>
 										<div class="postbox">
@@ -1047,17 +1051,20 @@ class Archive_Control {
 
 														$this->archive_control_add_field_image(
 															$options,
-															'archive_control_tax_' . $taxonomy->name . '_options'
+															'archive_control_tax_' . $taxonomy->name . '_options',
+															$edit_url
 														);
 
 														$this->archive_control_add_field_before(
 															$options,
-															'archive_control_tax_' . $taxonomy->name . '_options'
+															'archive_control_tax_' . $taxonomy->name . '_options',
+															$edit_url
 														);
 
 														$this->archive_control_add_field_after(
 															$options,
-															'archive_control_tax_' . $taxonomy->name . '_options'
+															'archive_control_tax_' . $taxonomy->name . '_options',
+															$edit_url
 														);
 
 														$this->archive_control_add_field_orderby(
