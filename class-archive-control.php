@@ -24,7 +24,7 @@ class Archive_Control {
 	 *
 	 * @const   string
 	 */
-	const VERSION = '1.3.0';
+	const VERSION = '1.3.1';
 
 	/**
 	 * Unique identifier for your plugin.
@@ -384,15 +384,21 @@ class Archive_Control {
 				$archive_control_term_image = $_POST['archive_control_term_meta']['image'];
 		        update_term_meta( $term_id, 'archive_control_term_image', $archive_control_term_image );
 			}
-	    }
+	    } else {
+			delete_term_meta( $term_id, 'archive_control_term_image' );
+		}
 		if( isset( $_POST['archive_control_term_meta']['before'] ) && $_POST['archive_control_term_meta']['before'] !==  '' ){
 	        $archive_control_term_before = wp_kses_post( $_POST['archive_control_term_meta']['before'] );
 	        update_term_meta( $term_id, 'archive_control_term_before', $archive_control_term_before );
-	    }
+	    } else {
+			delete_term_meta( $term_id, 'archive_control_term_before' );
+		}
 		if( isset( $_POST['archive_control_term_meta']['after'] ) && $_POST['archive_control_term_meta']['after'] !==  '' ){
 	        $archive_control_term_after = wp_kses_post( $_POST['archive_control_term_meta']['after'] );
 	        update_term_meta( $term_id, 'archive_control_term_after', $archive_control_term_after );
-	    }
+	    } else {
+			delete_term_meta( $term_id, 'archive_control_term_after' );
+		}
 
 		$archive_control_term_meta = array();
 		if( isset( $_POST['archive_control_term_meta']['orderby'] ) && $_POST['archive_control_term_meta']['orderby'] !==  '' ){

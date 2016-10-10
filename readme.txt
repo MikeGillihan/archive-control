@@ -4,7 +4,7 @@ Donate link: http://switchthemes.com/archive-control/
 Tags:  archive, archive page, archive template, custom post type, post type, custom taxonomy, term, category, tag, featured image, post types, title, order, pagination
 Requires at least: 4.1
 Tested up to: 4.6.1
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,9 +18,11 @@ A quick easy way to customize archive pages (or pages with lists of posts like c
     * Remove Labels (Archive, Category, Tag, etc.) - Sometimes you just want to get rid of the annoying default words.
     * Custom Override - Allow an editor to write something custom for an archive headline.
 
-*   **Archive Featured Image:** You can allow for a custom featured image that applies to an archive page and have it added above the list automatically, or add it yourself via a theme function.
+*   **Featured Image:** You can allow for a custom featured image that applies to an archive page and have it added above the list automatically, or add it yourself via a theme function.
 
-*   **Content Before or After Archive List:** Give your site editors the ability to edit content directly before or after the archive list. You can have it automatically added, or use a theme function to give you more control over their placement (see the "Other Notes" tab).
+*   **Content Before List:** Give your site editors the ability to edit content directly before the archive list. You can have it automatically added, or use a theme function to give you more control over their placement (see the "Other Notes" tab).
+
+*   **Content After List:** Give your site editors the ability to edit content directly after the archive list. You can have it automatically added, or use a theme function to give you more control over their placement (see the "Other Notes" tab).
 
 *   **Archive Order By:** Instead of messing with code to change the order of an archive page, now you can do it in a few clicks.
     * Date Published
@@ -37,6 +39,7 @@ A quick easy way to customize archive pages (or pages with lists of posts like c
     * Meta Value
     * Meta Value (Numeric)
     * No Order
+
 *   **Archive Order:** In addition to the order by setting, you'll also want to change the sort order direction.
     * Ascending
     * Descending
@@ -44,6 +47,11 @@ A quick easy way to customize archive pages (or pages with lists of posts like c
 *   **Archive Pagination:** The pagination settings are easy to change without changing code.
     * Show Everything
     * Custom Posts Per Page
+
+*   **Term Edit Options:** For categories, tags, and custom taxonomies, you can choose a few additional things.
+    * Per Term Order & Pagination - Customize the order, and pagination on a per term basis.
+    * Hide Description Field - You can choose to hide the term description field within the WordPress backend.
+    * Hide Parent Field - On hierarchal taxonomies, you can choose to hide the parent field within the WordPress backend.
 
 The plugin doesn't add any CSS or javascript to the front end. The styling of the archive page is left completely up to you. This plugin should be friendly for power users and developers alike. You can use it entirely without changing theme code, or you can control the placement and functionality more exactly using the provided functions. See the "Other Notes" tab.
 
@@ -68,7 +76,7 @@ It depends a lot how your custom post type is created. It must be set to "public
 
 = Why can't I customize the archive title? =
 
-The archive title functionality requires that a special function is used to display your archive title: the_archive_title(). This is an official WordPress function, but it is relatively new. If your theme does not use this function, and either hardcodes the title or uses a different function, then this plugin won't be able to help without you modifying the theme template.
+The archive title functionality requires that a special function is used to display it: the_archive_title(). This is an official WordPress function, but it is relatively new. If your theme does not use this function, and either hardcodes the title or uses a different function, then this plugin won't be able to help without you modifying the theme template.
 
 = How do you add in the content before/after archives? =
 
@@ -95,15 +103,19 @@ A custom taxonomy allows you to categorize specific elements separately from oth
 * Use a generator website to create them: https://generatewp.com/taxonomy/
 
 
-
 == Screenshots ==
 
 1. An example of a custom post type archive page.
 2. Settings for each custom post type that has an archive.
-3. Give your client the ability to edit archive headlines, a featured image, and content before and after the list.
+3. Settings for categories, taxonomies, and custom taxonomies.
+4. For custom post types, give your editors the ability to edit archive headlines, a featured image, and content before and after the list.
+5. For taxonomies, give your editors the ability to add a featured image, content before and after the list, and customize order and pagination per term.
+
 
 == Changelog ==
 
+= 1.3.1 =
+* Fixed a small issue with Term content deletion
 = 1.3.0 =
 * Added feature to customize categories and tags
 * Added feature to customize custom taxonomy terms
@@ -126,6 +138,9 @@ A custom taxonomy allows you to categorize specific elements separately from oth
 
 
 == Upgrade Notice ==
+
+= 1.3.1 =
+Fixed a small issue with Term content deletion
 
 = 1.3.0 =
 Added features to modify taxonomy term archive pages
