@@ -15,7 +15,7 @@
  * Plugin Name: Archive Control
  * Plugin URI:  http://switchthemes.com/archive-control/
  * Description: Customize custom post type archive titles, order, pagination, and add editable textareas above and below archive pages.
- * Version:     1.3.2
+ * Version:     1.3.3
  * Author:      Jesse Sutherland
  * Author URI:  http://jessesutherland.com
  * Text Domain: archive-control

@@ -3,8 +3,8 @@ Contributors: thejester12
 Donate link: http://switchthemes.com/archive-control/
 Tags:  archive, archive page, archive template, custom post type, post type, custom taxonomy, term, category, tag, featured image, post types, title, order, pagination
 Requires at least: 4.1
-Tested up to: 4.6.1
-Stable tag: 1.3.2
+Tested up to: 4.7
+Stable tag: 1.3.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -114,6 +114,8 @@ A custom taxonomy allows you to categorize specific elements separately from oth
 
 == Changelog ==
 
+= 1.3.3 =
+* Protect against incorrect users seeing Edit Archive Page Link in WP Admin Bar
 = 1.3.2 =
 * Fixed edit links after some code reorganization
 = 1.3.1 =
@@ -140,6 +142,9 @@ A custom taxonomy allows you to categorize specific elements separately from oth
 
 
 == Upgrade Notice ==
+
+= 1.3.3 =
+* Protect against incorrect users seeing Edit Archive Page Link in WP Admin Bar
 
 = 1.3.2 =
 * Fixed edit links after some code reorganization

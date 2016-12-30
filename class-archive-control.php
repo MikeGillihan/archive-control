@@ -24,7 +24,7 @@ class Archive_Control {
 	 *
 	 * @const   string
 	 */
-	const VERSION = '1.3.2';
+	const VERSION = '1.3.3';
 
 	/**
 	 * Unique identifier for your plugin.
@@ -272,7 +272,7 @@ class Archive_Control {
 	 * @since    1.1.1
 	 */
 	public function archive_control_archive_edit_link($wp_admin_bar) {
-		if (is_post_type_archive() && !is_admin()) {
+		if (is_post_type_archive() && !is_admin() && current_user_can('edit_posts')) {
 			$post_type = get_query_var('post_type', null);
 			$options = get_option('archive_control_cpt_' . $post_type . '_options');
 			$edit_url = get_admin_url() . 'edit.php?post_type=' . $post_type . '&page=edit-archive-' . $post_type;
